@@ -1,15 +1,7 @@
-import storageMock from './mocks/storage-mock'
-import es6Promise from 'es6-promise'
 import 'isomorphic-fetch'
-
 import assert from 'assert'
+import storageMock from './mocks/storage-mock'
 import fetchMock from 'fetch-mock'
-import {
-  account,
-  authKey,
-  params,
-  accountId
-} from './initialize'
 import {
   signInResponse,
   signInRefreshToken,
@@ -25,12 +17,30 @@ import {
   signInId
 } from './mocks/response-mock'
 
-es6Promise.polyfill()
-window.localStorage = storageMock()
+import Account from '../src/account'
+import IdP from '../src/idp'
+
+window.localStorage = storageMock() // imitation of localStorage in node environment
+
+let account = null
+const authKey = 'oauth2.key'
+const params = {
+  client_token: '12345',
+  grant_type: 'client_credentials'
+}
 
 describe('Account', () => {
+  describe('construct', () => {
+    it('create instance account', () => {
+      account = new Account({
+        provider: new IdP({ endpoint: 'https://mock-host' })
+      })
+      assert.notEqual(account, undefined)
+    })
+  })
+
   describe('_checkStatus', () => {
-    it('Return error when pass `undefined`', (done) => {
+    it('Return error when pass negative values', (done) => {
       try {
         account._checkStatus()
       } catch (err) {
@@ -69,7 +79,7 @@ describe('Account', () => {
   })
 
   describe('_parseJSON', () => {
-    it('Return error when pass `undefined`', (done) => {
+    it('Return error when pass negative values', (done) => {
       try {
         account._parseJSON()
       } catch (err) {
@@ -126,7 +136,40 @@ describe('Account', () => {
         methods: 'POST'
       })
     })
-    after(() => window.localStorage.removeItem(`account_${accountId}`))
+    after(() => window.localStorage.removeItem(`account_${signInId}`))
+
+    it('Return an error when pass negative values', (done) => {
+      const negativeValues = [
+        undefined,
+        null,
+        '',
+        {},
+        { auth_key: undefined, params: undefined },
+        { auth_key: null, params: null },
+        { auth_key: '', params: '' },
+        { id: undefined },
+        { id: null },
+        { id: '' },
+        { refresh_token: undefined },
+        { refresh_token: null },
+        { refresh_token: '' }
+      ]
+      const errors = []
+
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn(val)
+            .catch(err => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
+    })
 
     it('Successful response (`authKey` and `params`)', (done) => {
       account.signIn({ auth_key: authKey, params })
@@ -138,11 +181,11 @@ describe('Account', () => {
     })
 
     it('Item saved in localStorage', () => {
-      assert.strictEqual(!!window.localStorage.getItem(`account_${accountId}`), true)
+      assert.strictEqual(!!window.localStorage.getItem(`account_${signInId}`), true)
     })
 
-    it('Succesful response from localStorage (`accountId`)', (done) => {
-      account.signIn({ id: accountId })
+    it('Succesful response from localStorage (`signInId`)', (done) => {
+      account.signIn({ id: signInId })
         .then(res => {
           assert.strictEqual(typeof res === 'object', true)
           done()
@@ -150,11 +193,11 @@ describe('Account', () => {
     })
 
     it('Successfull response when token expired', (done) => {
-      const storage = JSON.parse(window.localStorage.getItem(`account_${accountId}`))
+      const storage = JSON.parse(window.localStorage.getItem(`account_${signInId}`))
       storage.expires_time = storage.expires_time - (storage.expires_in * 1000) - account.expiresLeeway
-      window.localStorage.setItem(`account_${accountId}`, JSON.stringify(storage))
+      window.localStorage.setItem(`account_${signInId}`, JSON.stringify(storage))
 
-      account.signIn({ id: accountId })
+      account.signIn({ id: signInId })
         .then(res => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(refreshResponse))
           done()
@@ -162,18 +205,10 @@ describe('Account', () => {
     })
 
     it('Successfull response (`refresh_token`)', (done) => {
-      window.localStorage.removeItem(`account_${accountId}`)
+      window.localStorage.removeItem(`account_${signInId}`)
       account.signIn({ refresh_token: signInRefreshToken })
         .then(res => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(refreshResponse))
-          done()
-        })
-    })
-
-    it('Return an error when pass `undefined`', (done) => {
-      account.signIn()
-        .catch((err) => {
-          assert.equal(err instanceof Error, true)
           done()
         })
     })
@@ -200,7 +235,26 @@ describe('Account', () => {
         methods: 'POST'
       })
     })
-    after(() => window.localStorage.removeItem(`account_${accountId}`))
+    after(() => window.localStorage.removeItem(`account_${signInId}`))
+
+    it('Return an error when pass negative values', (done) => {
+      const negativeValues = [ undefined, null, '' ]
+      const errors = []
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn({ auth_key: authKey, params })
+            .then(account.refresh(val))
+            .catch((err) => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
+    })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
@@ -215,15 +269,6 @@ describe('Account', () => {
       const accessToken = JSON.parse(window.localStorage.getItem(`account_${signInId}`)).access_token
 
       assert.strictEqual(responseResult.access_token, accessToken)
-    })
-
-    it('Return an error when pass `undefined`', (done) => {
-      account.signIn({ auth_key: authKey, params })
-        .then(account.refresh())
-        .catch((err) => {
-          assert.equal(err instanceof Error, true)
-          done()
-        })
     })
   })
 
@@ -250,6 +295,25 @@ describe('Account', () => {
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
 
+    it('Return error when pass negative values', (done) => {
+      const negativeValues = [ undefined, null, '' ]
+      const errors = []
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn({ auth_key: authKey, params })
+            .then(account.revoke(val))
+            .catch((err) => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
+    })
+
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.revoke(id))
@@ -263,15 +327,6 @@ describe('Account', () => {
       const refreshToken = JSON.parse(window.localStorage.getItem(`account_${signInId}`)).refresh_token
 
       assert.strictEqual(responseResult.refresh_token, refreshToken)
-    })
-
-    it('Return error when pass `undefined`', (done) => {
-      account.signIn({ auth_key: authKey, params })
-        .then(account.revoke())
-        .catch(err => {
-          assert.equal(err instanceof Error, true)
-          done()
-        })
     })
   })
 
@@ -293,22 +348,40 @@ describe('Account', () => {
         method: 'POST'
       })
     })
-    after(() => window.localStorage.removeItem(`account_${accountId}`))
+    after(() => window.localStorage.removeItem(`account_${signInId}`))
+
+    it('Return error when pass negative values', (done) => {
+      const negativeValues = [
+        undefined,
+        null,
+        '',
+        {},
+        { authKey: undefined, params: undefined },
+        { authKey: null, params: null },
+        { authKey: '', params: '' }
+      ]
+      const errors = []
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn({ auth_key: authKey, params })
+            .then(account.link(val))
+            .catch((err) => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
+    })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.link(authKey, linkParams))
         .then(res => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(linkResponse))
-          done()
-        })
-    })
-
-    it('Return error when pass `undefined`', (done) => {
-      account.signIn({ auth_key: authKey, params })
-        .then(account.link())
-        .catch(err => {
-          assert.equal(err instanceof Error, true)
           done()
         })
     })
@@ -332,22 +405,32 @@ describe('Account', () => {
         method: 'GET'
       })
     })
-    after(() => window.localStorage.removeItem(`account_${accountId}`))
+    after(() => window.localStorage.removeItem(`account_${signInId}`))
+
+    it('Return error when pass negative values', (done) => {
+      const negativeValues = [ undefined, null, '' ]
+      const errors = []
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn({ auth_key: authKey, params })
+            .then(account.auth(val))
+            .catch((err) => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
+    })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.auth(myAccountId))
         .then(res => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(authResponse))
-          done()
-        })
-    })
-
-    it('Return error when pass `undefined`', (done) => {
-      account.signIn({ auth_key: authKey, params })
-        .then(account.auth())
-        .catch(err => {
-          assert.equal(err instanceof Error, true)
           done()
         })
     })
@@ -371,22 +454,32 @@ describe('Account', () => {
         method: 'DELETE'
       })
     })
-    after(() => window.localStorage.removeItem(`account_${accountId}`))
+    after(() => window.localStorage.removeItem(`account_${signInId}`))
+
+    it('Return error when pass negative values', (done) => {
+      const negativeValues = [ undefined, null, '' ]
+      const errors = []
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn({ auth_key: authKey, params })
+            .then(account.unlink(val))
+            .catch((err) => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
+    })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.unlink(myAccountId, authKey))
         .then(res => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(unLinkResponse))
-          done()
-        })
-    })
-
-    it('Return error when pass `undefined`', (done) => {
-      account.signIn({ auth_key: authKey, params })
-        .then(account.unlink())
-        .catch(err => {
-          assert.equal(err instanceof Error, true)
           done()
         })
     })
@@ -408,7 +501,26 @@ describe('Account', () => {
         method: 'GET'
       })
     })
-    after(() => window.localStorage.removeItem(`account_${accountId}`))
+    after(() => window.localStorage.removeItem(`account_${signInId}`))
+
+    it('Return error when pass negative values', (done) => {
+      const negativeValues = [ undefined, null, '' ]
+      const errors = []
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn({ auth_key: authKey, params })
+            .then(account.get(val))
+            .catch((err) => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
+    })
 
     it('AccountId from `signIn` equal accountId from `get`', (done) => {
       let responseId = null
@@ -424,19 +536,10 @@ describe('Account', () => {
     })
 
     it('AccountId from localStorage equal accountId from `get`', (done) => {
-      account.signIn({ id: accountId })
+      account.signIn({ id: signInId })
         .then(account.get(id))
         .then(res => {
-          assert.strictEqual(res.id, accountId)
-          done()
-        })
-    })
-
-    it('Return error when pass `undefined`', (done) => {
-      account.signIn({ auth_key: authKey, params })
-        .then(account.get())
-        .catch(err => {
-          assert.equal(err instanceof Error, true)
+          assert.strictEqual(res.id, signInId)
           done()
         })
     })
@@ -463,7 +566,26 @@ describe('Account', () => {
         method: 'DELETE'
       })
     })
-    after(() => window.localStorage.removeItem(`account_${accountId}`))
+    after(() => window.localStorage.removeItem(`account_${signInId}`))
+
+    it('Return error when pass negative values', (done) => {
+      const negativeValues = [ undefined, null, '' ]
+      const errors = []
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn({ auth_key: authKey, params })
+            .then(account.remove(val))
+            .catch((err) => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
+    })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
@@ -475,16 +597,7 @@ describe('Account', () => {
     })
 
     it('AccountId from localStorage removed', () => {
-      assert.strictEqual(!!window.localStorage.getItem(`account_${accountId}`), false)
-    })
-
-    it('Return error when pass `undefined`', (done) => {
-      account.signIn({ auth_key: authKey, params })
-        .then(account.remove())
-        .catch(err => {
-          assert.equal(err instanceof Error, true)
-          done()
-        })
+      assert.strictEqual(!!window.localStorage.getItem(`account_${signInId}`), false)
     })
   })
 
@@ -501,39 +614,49 @@ describe('Account', () => {
         method: 'GET'
       })
     })
-    afterEach(() => window.localStorage.removeItem(`account_${accountId}`))
+    afterEach(() => window.localStorage.removeItem(`account_${signInId}`))
+
+    it('Return error when pass negative values', (done) => {
+      const negativeValues = [ undefined, null, '' ]
+      const errors = []
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn({ refresh_token: signInRefreshToken })
+            .then(account.isEnabled(val))
+            .catch((err) => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
+    })
 
     it('Response 204 (account enabled)', (done) => {
-      fetchMock.once(`${account.provider.endpoint}/accounts/${accountId}/enabled`, {
+      fetchMock.once(`${account.provider.endpoint}/accounts/${signInId}/enabled`, {
         status: 204
       }, {
         method: 'GET'
       })
       account.signIn({ refresh_token: signInRefreshToken })
-        .then(account.isEnabled(accountId))
+        .then(account.isEnabled(signInId))
         .then(data => { done() })
     })
 
     it('Response 404 (account disabled)', (done) => {
-      fetchMock.once(`${account.provider.endpoint}/accounts/${accountId}/enabled`, {
+      fetchMock.once(`${account.provider.endpoint}/accounts/${signInId}/enabled`, {
         status: 404
       }, {
         method: 'GET'
       })
       account.signIn({ refresh_token: signInRefreshToken })
-        .then(account.isEnabled(accountId))
+        .then(account.isEnabled(signInId))
         .catch((err) => {
           assert.equal(err instanceof Error, true)
           assert.equal(err.response.status, 404)
-          done()
-        })
-    })
-
-    it('Return error when pass `undefined`', (done) => {
-      account.signIn({ refresh_token: signInRefreshToken })
-        .then(account.isEnabled())
-        .catch(err => {
-          assert.equal(err instanceof Error, true)
           done()
         })
     })
@@ -552,28 +675,38 @@ describe('Account', () => {
         method: 'GET'
       })
     })
-    after(() => window.localStorage.removeItem(`account_${accountId}`))
+    after(() => window.localStorage.removeItem(`account_${signInId}`))
     beforeEach(() => {
-      fetchMock.mock(`${account.provider.endpoint}/accounts/${accountId}/enabled`, {
+      fetchMock.mock(`${account.provider.endpoint}/accounts/${signInId}/enabled`, {
         status: 204
       }, {
         method: 'PUT'
       })
     })
 
-    it('Successfull response (account enabled)', (done) => {
-      account.signIn({ refresh_token: signInRefreshToken })
-        .then(account.enable(accountId))
-        .then(data => { done() })
+    it('Return error when pass negative values', (done) => {
+      const negativeValues = [ undefined, null, '' ]
+      const errors = []
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn({ refresh_token: signInRefreshToken })
+            .then(account.enable(val))
+            .catch((err) => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
     })
 
-    it('Return error when pass `undefined`', (done) => {
+    it('Successfull response (account enabled)', (done) => {
       account.signIn({ refresh_token: signInRefreshToken })
-        .then(account.enable())
-        .catch(err => {
-          assert.equal(err instanceof Error, true)
-          done()
-        })
+        .then(account.enable(signInId))
+        .then(data => { done() })
     })
   })
 
@@ -590,28 +723,38 @@ describe('Account', () => {
         method: 'GET'
       })
     })
-    after(() => window.localStorage.removeItem(`account_${accountId}`))
+    after(() => window.localStorage.removeItem(`account_${signInId}`))
     beforeEach(() => {
-      fetchMock.mock(`${account.provider.endpoint}/accounts/${accountId}/enabled`, {
+      fetchMock.mock(`${account.provider.endpoint}/accounts/${signInId}/enabled`, {
         status: 204
       }, {
         method: 'DELETE'
       })
     })
 
-    it('Successfull response (account disabled)', (done) => {
-      account.signIn({ refresh_token: signInRefreshToken })
-        .then(account.disable(accountId))
-        .then(data => { done() })
+    it('Return error when pass negative values', (done) => {
+      const negativeValues = [ undefined, null, '' ]
+      const errors = []
+      for (let i = 0; i < negativeValues.length; i++) {
+        ((val, counter) => {
+          account.signIn({ refresh_token: signInRefreshToken })
+            .then(account.disable(val))
+            .catch((err) => {
+              errors.push(err)
+              assert.equal(err instanceof Error, true)
+              if (counter === negativeValues.length - 1) {
+                assert.equal(errors.length, negativeValues.length)
+                done()
+              }
+            })
+        })(negativeValues[i], i)
+      }
     })
 
-    it('Return error when pass `undefined`', (done) => {
+    it('Successfull response (account disabled)', (done) => {
       account.signIn({ refresh_token: signInRefreshToken })
-        .then(account.disable())
-        .catch(err => {
-          assert.equal(err instanceof Error, true)
-          done()
-        })
+        .then(account.disable(signInId))
+        .then(data => { done() })
     })
   })
 
@@ -633,7 +776,7 @@ describe('Account', () => {
       account.signIn({ auth_key: authKey, params })
         .then(() => account.signOut())
         .then(() => {
-          assert.strictEqual(window.localStorage.getItem(`account_${accountId}`), null)
+          assert.strictEqual(window.localStorage.getItem(`account_${signInId}`), null)
           assert.strictEqual(account.id, null)
           done()
         })
