@@ -9,6 +9,8 @@ class Account {
   }
 
   constructor (config) {
+    if (!config || !config.provider) throw new TypeError('Missing `provider` in config')
+
     this.provider = config.provider
     this.retries = config.retries || MAX_AJAX_RETRY
     this.retryDelay = config.retryDelay || AJAX_RETRY_DELAY

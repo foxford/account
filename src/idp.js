@@ -2,9 +2,9 @@ import Provider from './provider'
 
 class IdP extends Provider {
   constructor (config) {
-    super()
-
     if (!config && !config.endpoint) throw new TypeError('Missing `endpoint` in config')
+
+    super()
 
     this.endpoint = config.endpoint
   }

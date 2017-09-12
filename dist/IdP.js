@@ -129,9 +129,9 @@ var IdP = function (_Provider) {
   function IdP(config) {
     _classCallCheck(this, IdP);
 
-    var _this = _possibleConstructorReturn(this, (IdP.__proto__ || Object.getPrototypeOf(IdP)).call(this));
-
     if (!config && !config.endpoint) throw new TypeError('Missing `endpoint` in config');
+
+    var _this = _possibleConstructorReturn(this, (IdP.__proto__ || Object.getPrototypeOf(IdP)).call(this));
 
     _this.endpoint = config.endpoint;
     return _this;
