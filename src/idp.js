@@ -10,8 +10,9 @@ class IdP extends Provider {
   }
 
   accessTokenRequest (authKey, { client_token, grant_type }) {
-    if (!authKey) throw new TypeError('Incorrect parameter `authKey`')
-    if (!client_token || !grant_type) throw new TypeError('Incorrect parameters `client_token` or `grant_type`')
+    if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
+    if (!client_token) throw new TypeError(`Incorrect parameters 'client_token': ${client_token}`)
+    if (!grant_type) throw new TypeError(`Incorrect parameters 'grant_type': ${grant_type}`)
 
     const uri = `${this.endpoint}/auth/${authKey}/token`
 
@@ -28,8 +29,8 @@ class IdP extends Provider {
   }
 
   refreshAccessTokenRequest (id, refreshToken) {
-    if (!id) throw new TypeError('Incorrect parameter `id`')
-    if (!refreshToken) throw new TypeError('Incorrect parameter `refreshToken`')
+    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+    if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
     const uri = `${this.endpoint}/accounts/${id}/refresh`
 
@@ -42,8 +43,8 @@ class IdP extends Provider {
   }
 
   revokeRefreshTokenRequest (id, refreshToken) {
-    if (!id) throw new TypeError('Incorrect parameter `id`')
-    if (!refreshToken) throw new TypeError('Incorrect parameter `refreshToken`')
+    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+    if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
     const uri = `${this.endpoint}/accounts/${id}/revoke`
 
@@ -56,9 +57,10 @@ class IdP extends Provider {
   }
 
   linkRequest (authKey, { client_token, grant_type }, accessToken) {
-    if (!authKey) throw new TypeError('Incorrect parameter `authKey`')
-    if (!client_token || !grant_type) throw new TypeError('Incorrect parameters `client_token` or `grant_type`')
-    if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`')
+    if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
+    if (!client_token) throw new TypeError(`Incorrect parameters 'client_token': ${client_token}`)
+    if (!grant_type) throw new TypeError(`Incorrect parameters 'grant_type': ${grant_type}`)
+    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
     const uri = `${this.endpoint}/auth/${authKey}/link`
 
@@ -76,8 +78,8 @@ class IdP extends Provider {
   }
 
   authRequest (id, accessToken) {
-    if (!id) throw new TypeError('Incorrect parameter `id`')
-    if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`')
+    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
     const uri = `${this.endpoint}/accounts/${id}/auth`
 
@@ -90,9 +92,9 @@ class IdP extends Provider {
   }
 
   unlinkRequest (id, authKey, accessToken) {
-    if (!id) throw new TypeError('Incorrect parameter `id`')
-    if (!authKey) throw new TypeError('Incorrect parameter `authKey`')
-    if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`')
+    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+    if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
+    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
     const uri = `${this.endpoint}/accounts/${id}/auth/${authKey}`
 
@@ -105,8 +107,8 @@ class IdP extends Provider {
   }
 
   accountRequest (id, accessToken) {
-    if (!id) throw new TypeError('Incorrect parameter `id`')
-    if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`')
+    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
     const uri = `${this.endpoint}/accounts/${id}`
 
@@ -119,8 +121,8 @@ class IdP extends Provider {
   }
 
   removeAccountRequest (id, accessToken) {
-    if (!id) throw new TypeError('Incorrect parameter `id`')
-    if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`')
+    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
     const uri = `${this.endpoint}/accounts/${id}`
 
@@ -133,8 +135,8 @@ class IdP extends Provider {
   }
 
   isEnabledRequest (id, accessToken) {
-    if (!id) throw new TypeError('Incorrect parameter `id`')
-    if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`')
+    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
     const uri = `${this.endpoint}/accounts/${id}/enabled`
 
@@ -147,8 +149,8 @@ class IdP extends Provider {
   }
 
   enableRequest (id, accessToken) {
-    if (!id) throw new TypeError('Incorrect parameter `id`')
-    if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`')
+    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
     const uri = `${this.endpoint}/accounts/${id}/enabled`
 
@@ -161,8 +163,8 @@ class IdP extends Provider {
   }
 
   disableRequest (id, accessToken) {
-    if (!id) throw new TypeError('Incorrect parameter `id`')
-    if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`')
+    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
     const uri = `${this.endpoint}/accounts/${id}/enabled`
 

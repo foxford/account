@@ -143,8 +143,9 @@ var IdP = function (_Provider) {
       var client_token = _ref.client_token,
           grant_type = _ref.grant_type;
 
-      if (!authKey) throw new TypeError('Incorrect parameter `authKey`');
-      if (!client_token || !grant_type) throw new TypeError('Incorrect parameters `client_token` or `grant_type`');
+      if (!authKey) throw new TypeError('Incorrect parameter \'authKey\': ' + authKey);
+      if (!client_token) throw new TypeError('Incorrect parameters \'client_token\': ' + client_token);
+      if (!grant_type) throw new TypeError('Incorrect parameters \'grant_type\': ' + grant_type);
 
       var uri = this.endpoint + '/auth/' + authKey + '/token';
 
@@ -162,8 +163,8 @@ var IdP = function (_Provider) {
   }, {
     key: 'refreshAccessTokenRequest',
     value: function refreshAccessTokenRequest(id, refreshToken) {
-      if (!id) throw new TypeError('Incorrect parameter `id`');
-      if (!refreshToken) throw new TypeError('Incorrect parameter `refreshToken`');
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!refreshToken) throw new TypeError('Incorrect parameter \'refreshToken\': ' + refreshToken);
 
       var uri = this.endpoint + '/accounts/' + id + '/refresh';
 
@@ -177,8 +178,8 @@ var IdP = function (_Provider) {
   }, {
     key: 'revokeRefreshTokenRequest',
     value: function revokeRefreshTokenRequest(id, refreshToken) {
-      if (!id) throw new TypeError('Incorrect parameter `id`');
-      if (!refreshToken) throw new TypeError('Incorrect parameter `refreshToken`');
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!refreshToken) throw new TypeError('Incorrect parameter \'refreshToken\': ' + refreshToken);
 
       var uri = this.endpoint + '/accounts/' + id + '/revoke';
 
@@ -195,9 +196,10 @@ var IdP = function (_Provider) {
       var client_token = _ref2.client_token,
           grant_type = _ref2.grant_type;
 
-      if (!authKey) throw new TypeError('Incorrect parameter `authKey`');
-      if (!client_token || !grant_type) throw new TypeError('Incorrect parameters `client_token` or `grant_type`');
-      if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`');
+      if (!authKey) throw new TypeError('Incorrect parameter \'authKey\': ' + authKey);
+      if (!client_token) throw new TypeError('Incorrect parameters \'client_token\': ' + client_token);
+      if (!grant_type) throw new TypeError('Incorrect parameters \'grant_type\': ' + grant_type);
+      if (!accessToken) throw new TypeError('Incorrect parameter \'accessToken\': ' + accessToken);
 
       var uri = this.endpoint + '/auth/' + authKey + '/link';
 
@@ -216,8 +218,8 @@ var IdP = function (_Provider) {
   }, {
     key: 'authRequest',
     value: function authRequest(id, accessToken) {
-      if (!id) throw new TypeError('Incorrect parameter `id`');
-      if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`');
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!accessToken) throw new TypeError('Incorrect parameter \'accessToken\': ' + accessToken);
 
       var uri = this.endpoint + '/accounts/' + id + '/auth';
 
@@ -231,9 +233,9 @@ var IdP = function (_Provider) {
   }, {
     key: 'unlinkRequest',
     value: function unlinkRequest(id, authKey, accessToken) {
-      if (!id) throw new TypeError('Incorrect parameter `id`');
-      if (!authKey) throw new TypeError('Incorrect parameter `authKey`');
-      if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`');
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!authKey) throw new TypeError('Incorrect parameter \'authKey\': ' + authKey);
+      if (!accessToken) throw new TypeError('Incorrect parameter \'accessToken\': ' + accessToken);
 
       var uri = this.endpoint + '/accounts/' + id + '/auth/' + authKey;
 
@@ -247,8 +249,8 @@ var IdP = function (_Provider) {
   }, {
     key: 'accountRequest',
     value: function accountRequest(id, accessToken) {
-      if (!id) throw new TypeError('Incorrect parameter `id`');
-      if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`');
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!accessToken) throw new TypeError('Incorrect parameter \'accessToken\': ' + accessToken);
 
       var uri = this.endpoint + '/accounts/' + id;
 
@@ -262,8 +264,8 @@ var IdP = function (_Provider) {
   }, {
     key: 'removeAccountRequest',
     value: function removeAccountRequest(id, accessToken) {
-      if (!id) throw new TypeError('Incorrect parameter `id`');
-      if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`');
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!accessToken) throw new TypeError('Incorrect parameter \'accessToken\': ' + accessToken);
 
       var uri = this.endpoint + '/accounts/' + id;
 
@@ -277,8 +279,8 @@ var IdP = function (_Provider) {
   }, {
     key: 'isEnabledRequest',
     value: function isEnabledRequest(id, accessToken) {
-      if (!id) throw new TypeError('Incorrect parameter `id`');
-      if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`');
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!accessToken) throw new TypeError('Incorrect parameter \'accessToken\': ' + accessToken);
 
       var uri = this.endpoint + '/accounts/' + id + '/enabled';
 
@@ -292,8 +294,8 @@ var IdP = function (_Provider) {
   }, {
     key: 'enableRequest',
     value: function enableRequest(id, accessToken) {
-      if (!id) throw new TypeError('Incorrect parameter `id`');
-      if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`');
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!accessToken) throw new TypeError('Incorrect parameter \'accessToken\': ' + accessToken);
 
       var uri = this.endpoint + '/accounts/' + id + '/enabled';
 
@@ -307,8 +309,8 @@ var IdP = function (_Provider) {
   }, {
     key: 'disableRequest',
     value: function disableRequest(id, accessToken) {
-      if (!id) throw new TypeError('Incorrect parameter `id`');
-      if (!accessToken) throw new TypeError('Incorrect parameter `accessToken`');
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!accessToken) throw new TypeError('Incorrect parameter \'accessToken\': ' + accessToken);
 
       var uri = this.endpoint + '/accounts/' + id + '/enabled';
 
