@@ -24,11 +24,13 @@ class Account {
    * Get token data
    */
   _getTokenData () {
+    let item
     try {
-      const item = window.localStorage.getItem(`account_${this.id}`)
-
+      item = window.localStorage.getItem(`account_${this.id}`)
+    } catch (err) { throw new Error('Missing item in localStorage') }
+    try {
       return JSON.parse(item)
-    } catch (err) { throw new Error(err) }
+    } catch (err) { throw new Error('Error occured when parse item from localStorage') }
   }
 
   /**

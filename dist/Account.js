@@ -144,12 +144,16 @@ var Account = function () {
   _createClass(Account, [{
     key: '_getTokenData',
     value: function _getTokenData() {
+      var item = void 0;
       try {
-        var item = window.localStorage.getItem('account_' + this.id);
-
+        item = window.localStorage.getItem('account_' + this.id);
+      } catch (err) {
+        throw new Error('Missing item in localStorage');
+      }
+      try {
         return JSON.parse(item);
       } catch (err) {
-        throw new Error(err);
+        throw new Error('Error occured when parse item from localStorage');
       }
     }
 
