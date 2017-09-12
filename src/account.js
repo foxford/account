@@ -308,8 +308,7 @@ class Account {
   _saveTokenData (data) {
     if (!this.id) throw new TypeError('Missing `id` in object')
 
-    const savedTokenData = this._getTokenData() || {}
-    const tokenData = {}
+    const tokenData = this._getTokenData() || {}
 
     if (data && data.access_token) {
       tokenData.access_token = data.access_token
@@ -322,7 +321,7 @@ class Account {
       tokenData.expires_time = Date.now() + (data.expires_in * 1000)
     }
 
-    window.localStorage.setItem(`account_${this.id}`, JSON.stringify({ ...savedTokenData, ...tokenData }))
+    window.localStorage.setItem(`account_${this.id}`, JSON.stringify(tokenData))
   }
 
   /**

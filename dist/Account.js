@@ -84,16 +84,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i];for (var key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        target[key] = source[key];
-      }
-    }
-  }return target;
-};
-
 var _createClass = function () {
   function defineProperties(target, props) {
     for (var i = 0; i < props.length; i++) {
@@ -473,8 +463,7 @@ var Account = function () {
     value: function _saveTokenData(data) {
       if (!this.id) throw new TypeError('Missing `id` in object');
 
-      var savedTokenData = this._getTokenData() || {};
-      var tokenData = {};
+      var tokenData = this._getTokenData() || {};
 
       if (data && data.access_token) {
         tokenData.access_token = data.access_token;
@@ -487,7 +476,7 @@ var Account = function () {
         tokenData.expires_time = Date.now() + data.expires_in * 1000;
       }
 
-      window.localStorage.setItem('account_' + this.id, JSON.stringify(_extends({}, savedTokenData, tokenData)));
+      window.localStorage.setItem('account_' + this.id, JSON.stringify(tokenData));
     }
 
     /**
