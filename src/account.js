@@ -122,7 +122,6 @@ class Account {
           this._saveTokenData(data)
           return Promise.resolve(data)
         })
-        .catch(err => Promise.reject(err))
     }
   }
 
@@ -144,7 +143,6 @@ class Account {
         .then(this._checkStatus)
         .then(this._parseJSON)
         .then(data => Promise.resolve(data))
-        .catch(err => Promise.reject(err))
     }
   }
 
@@ -165,7 +163,6 @@ class Account {
         .then(this._checkStatus)
         .then(this._parseJSON)
         .then(data => Promise.resolve(data))
-        .catch(err => Promise.reject(err))
     }
   }
 
@@ -187,7 +184,6 @@ class Account {
         .then(this._checkStatus)
         .then(this._parseJSON)
         .then(data => Promise.resolve(data))
-        .catch(err => Promise.reject(err))
     }
   }
 
@@ -208,7 +204,6 @@ class Account {
         .then(this._checkStatus)
         .then(this._parseJSON)
         .then(data => Promise.resolve(data))
-        .catch(err => Promise.reject(err))
     }
   }
 
@@ -231,7 +226,6 @@ class Account {
           this.signOut()
           return Promise.resolve(data)
         })
-        .catch(err => Promise.reject(err))
     }
   }
 
@@ -251,7 +245,6 @@ class Account {
       )
         .then(this._checkStatus)
         .then(Promise.resolve())
-        .catch(err => Promise.reject(err))
     }
   }
 
@@ -271,7 +264,6 @@ class Account {
       )
         .then(this._checkStatus)
         .then(Promise.resolve())
-        .catch(err => Promise.reject(err))
     }
   }
 
@@ -291,7 +283,6 @@ class Account {
       )
         .then(this._checkStatus)
         .then(Promise.resolve())
-        .catch(err => Promise.reject(err))
     }
   }
 
@@ -349,7 +340,6 @@ class Account {
           this._saveTokenData(data)
           return Promise.resolve(data)
         })
-        .catch(err => Promise.reject(err))
     }
 
     return this._fetchRetry(
@@ -365,7 +355,6 @@ class Account {
           return Promise.resolve(data)
         }
       })
-      .catch(err => Promise.reject(err))
   }
 
   /**
@@ -394,7 +383,6 @@ class Account {
           saveData(data)
           return Promise.resolve(data)
         })
-        .catch(err => Promise.reject(err))
     }
 
     return this._fetchRetry(
@@ -410,7 +398,6 @@ class Account {
           return Promise.resolve(data)
         }
       })
-      .catch(err => Promise.reject(err))
   }
 
   /**

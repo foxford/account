@@ -253,8 +253,6 @@ var Account = function () {
         }).then(_this3._checkStatus).then(_this3._parseJSON).then(function (data) {
           _this3._saveTokenData(data);
           return Promise.resolve(data);
-        }).catch(function (err) {
-          return Promise.reject(err);
         });
       };
     }
@@ -280,8 +278,6 @@ var Account = function () {
           return _this4.provider.linkRequest(authKey, params, tokenData.access_token);
         }).then(_this4._checkStatus).then(_this4._parseJSON).then(function (data) {
           return Promise.resolve(data);
-        }).catch(function (err) {
-          return Promise.reject(err);
         });
       };
     }
@@ -306,8 +302,6 @@ var Account = function () {
           return _this5.provider.authRequest(id, tokenData.access_token);
         }).then(_this5._checkStatus).then(_this5._parseJSON).then(function (data) {
           return Promise.resolve(data);
-        }).catch(function (err) {
-          return Promise.reject(err);
         });
       };
     }
@@ -333,8 +327,6 @@ var Account = function () {
           return _this6.provider.unlinkRequest(id, authKey, tokenData.access_token);
         }).then(_this6._checkStatus).then(_this6._parseJSON).then(function (data) {
           return Promise.resolve(data);
-        }).catch(function (err) {
-          return Promise.reject(err);
         });
       };
     }
@@ -359,8 +351,6 @@ var Account = function () {
           return _this7.provider.accountRequest(id, tokenData.access_token);
         }).then(_this7._checkStatus).then(_this7._parseJSON).then(function (data) {
           return Promise.resolve(data);
-        }).catch(function (err) {
-          return Promise.reject(err);
         });
       };
     }
@@ -385,8 +375,6 @@ var Account = function () {
         }).then(_this8._checkStatus).then(_this8._parseJSON).then(function (data) {
           _this8.signOut();
           return Promise.resolve(data);
-        }).catch(function (err) {
-          return Promise.reject(err);
         });
       };
     }
@@ -409,9 +397,7 @@ var Account = function () {
 
         return _this9._fetchRetry(function () {
           return _this9.provider.isEnabledRequest(id, tokenData.access_token);
-        }).then(_this9._checkStatus).then(Promise.resolve()).catch(function (err) {
-          return Promise.reject(err);
-        });
+        }).then(_this9._checkStatus).then(Promise.resolve());
       };
     }
 
@@ -433,9 +419,7 @@ var Account = function () {
 
         return _this10._fetchRetry(function () {
           return _this10.provider.enableRequest(id, tokenData.access_token);
-        }).then(_this10._checkStatus).then(Promise.resolve()).catch(function (err) {
-          return Promise.reject(err);
-        });
+        }).then(_this10._checkStatus).then(Promise.resolve());
       };
     }
 
@@ -457,9 +441,7 @@ var Account = function () {
 
         return _this11._fetchRetry(function () {
           return _this11.provider.disableRequest(id, tokenData.access_token);
-        }).then(_this11._checkStatus).then(Promise.resolve()).catch(function (err) {
-          return Promise.reject(err);
-        });
+        }).then(_this11._checkStatus).then(Promise.resolve());
       };
     }
 
@@ -524,8 +506,6 @@ var Account = function () {
           _this12.id = res.id;
           _this12._saveTokenData(data);
           return Promise.resolve(data);
-        }).catch(function (err) {
-          return Promise.reject(err);
         });
       };
 
@@ -538,8 +518,6 @@ var Account = function () {
           _this12._saveTokenData(data);
           return Promise.resolve(data);
         }
-      }).catch(function (err) {
-        return Promise.reject(err);
       });
     }
 
@@ -570,8 +548,6 @@ var Account = function () {
           _this13.id = res.id;
           saveData(data);
           return Promise.resolve(data);
-        }).catch(function (err) {
-          return Promise.reject(err);
         });
       };
 
@@ -584,8 +560,6 @@ var Account = function () {
           saveData(data);
           return Promise.resolve(data);
         }
-      }).catch(function (err) {
-        return Promise.reject(err);
       });
     }
 
