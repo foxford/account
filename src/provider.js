@@ -1,10 +1,4 @@
 class Provider {
-  constructor () {
-    if (this.constructor === Provider) {
-      throw new TypeError('Abstract class cannot be constructed')
-    }
-  }
-
   accessTokenRequest () {
     throw new TypeError('Abstract method `accessTokenRequest` is not implemented')
   }

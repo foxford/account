@@ -356,10 +356,6 @@ function _classCallCheck(instance, Constructor) {
 var Provider = function () {
   function Provider() {
     _classCallCheck(this, Provider);
-
-    if (this.constructor === Provider) {
-      throw new TypeError('Abstract class cannot be constructed');
-    }
   }
 
   _createClass(Provider, [{
