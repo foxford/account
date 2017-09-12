@@ -103,21 +103,6 @@ describe('Account', () => {
     })
   })
 
-  describe('_fetchRetry', () => {
-    it('Return response', (done) => {
-      fetchMock.postOnce(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        status: 200,
-        body: signInResponse
-      })
-
-      account._fetchRetry(() => account.provider.accessTokenRequest(authKey, params))
-        .then(response => {
-          assert(response.status, 200)
-          done()
-        })
-    })
-  })
-
   describe('signIn', () => {
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/token`, {
