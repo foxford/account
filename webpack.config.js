@@ -3,14 +3,12 @@ const pckgJson = require('./package.json')
 
 module.exports = {
   entry: {
-    Account: './src/account',
-    IdP: './src/idp'
+    Account: './src'
   },
   output: {
-    filename: './dist/[name].js',
+    filename: './dist/account.js',
     libraryTarget: 'umd',
-    library: '[name]',
-    libraryExport: 'default'
+    library: '[name]'
   },
   module: {
     rules: [{
