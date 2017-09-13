@@ -242,7 +242,7 @@ var Account = function () {
           return _this3.provider.revokeRefreshTokenRequest(id, tokenData.refresh_token);
         }).then(_this3._checkStatus).then(_this3._parseJSON).then(function (data) {
           _this3._saveTokenData(data);
-          return Promise.resolve(data);
+          return data;
         });
       };
     }
@@ -268,7 +268,7 @@ var Account = function () {
         return _this4._fetchRetry(function () {
           return _this4.provider.linkRequest(authKey, params, tokenData.access_token);
         }).then(_this4._checkStatus).then(_this4._parseJSON).then(function (data) {
-          return Promise.resolve(data);
+          return data;
         });
       };
     }
@@ -292,7 +292,7 @@ var Account = function () {
         return _this5._fetchRetry(function () {
           return _this5.provider.authRequest(id, tokenData.access_token);
         }).then(_this5._checkStatus).then(_this5._parseJSON).then(function (data) {
-          return Promise.resolve(data);
+          return data;
         });
       };
     }
@@ -318,7 +318,7 @@ var Account = function () {
         return _this6._fetchRetry(function () {
           return _this6.provider.unlinkRequest(id, authKey, tokenData.access_token);
         }).then(_this6._checkStatus).then(_this6._parseJSON).then(function (data) {
-          return Promise.resolve(data);
+          return data;
         });
       };
     }
@@ -342,7 +342,7 @@ var Account = function () {
         return _this7._fetchRetry(function () {
           return _this7.provider.accountRequest(id, tokenData.access_token);
         }).then(_this7._checkStatus).then(_this7._parseJSON).then(function (data) {
-          return Promise.resolve(data);
+          return data;
         });
       };
     }
@@ -366,7 +366,7 @@ var Account = function () {
           return _this8.provider.removeAccountRequest(id, tokenData.access_token);
         }).then(_this8._checkStatus).then(_this8._parseJSON).then(function (data) {
           _this8.signOut();
-          return Promise.resolve(data);
+          return data;
         });
       };
     }
@@ -389,7 +389,7 @@ var Account = function () {
 
         return _this9._fetchRetry(function () {
           return _this9.provider.isEnabledRequest(id, tokenData.access_token);
-        }).then(_this9._checkStatus).then(Promise.resolve());
+        }).then(_this9._checkStatus);
       };
     }
 
@@ -411,7 +411,7 @@ var Account = function () {
 
         return _this10._fetchRetry(function () {
           return _this10.provider.enableRequest(id, tokenData.access_token);
-        }).then(_this10._checkStatus).then(Promise.resolve());
+        }).then(_this10._checkStatus);
       };
     }
 
@@ -433,7 +433,7 @@ var Account = function () {
 
         return _this11._fetchRetry(function () {
           return _this11.provider.disableRequest(id, tokenData.access_token);
-        }).then(_this11._checkStatus).then(Promise.resolve());
+        }).then(_this11._checkStatus);
       };
     }
 
@@ -497,7 +497,7 @@ var Account = function () {
         }).then(_this12._checkStatus).then(_this12._parseJSON).then(function (res) {
           _this12.id = res.id;
           _this12._saveTokenData(data);
-          return Promise.resolve(data);
+          return data;
         });
       };
 
@@ -508,7 +508,7 @@ var Account = function () {
           return fetchAccount(data);
         } else {
           _this12._saveTokenData(data);
-          return Promise.resolve(data);
+          return data;
         }
       });
     }
@@ -540,7 +540,7 @@ var Account = function () {
         }).then(_this13._checkStatus).then(_this13._parseJSON).then(function (res) {
           _this13.id = res.id;
           saveData(data);
-          return Promise.resolve(data);
+          return data;
         });
       };
 
@@ -551,7 +551,7 @@ var Account = function () {
           return fetchAccount(data);
         } else {
           saveData(data);
-          return Promise.resolve(data);
+          return data;
         }
       });
     }

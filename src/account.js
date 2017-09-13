@@ -120,7 +120,7 @@ class Account {
         .then(this._parseJSON)
         .then(data => {
           this._saveTokenData(data)
-          return Promise.resolve(data)
+          return data
         })
     }
   }
@@ -143,7 +143,7 @@ class Account {
       )
         .then(this._checkStatus)
         .then(this._parseJSON)
-        .then(data => Promise.resolve(data))
+        .then(data => data)
     }
   }
 
@@ -163,7 +163,7 @@ class Account {
       )
         .then(this._checkStatus)
         .then(this._parseJSON)
-        .then(data => Promise.resolve(data))
+        .then(data => data)
     }
   }
 
@@ -185,7 +185,7 @@ class Account {
       )
         .then(this._checkStatus)
         .then(this._parseJSON)
-        .then(data => Promise.resolve(data))
+        .then(data => data)
     }
   }
 
@@ -205,7 +205,7 @@ class Account {
       )
         .then(this._checkStatus)
         .then(this._parseJSON)
-        .then(data => Promise.resolve(data))
+        .then(data => data)
     }
   }
 
@@ -226,7 +226,7 @@ class Account {
         .then(this._parseJSON)
         .then(data => {
           this.signOut()
-          return Promise.resolve(data)
+          return data
         })
     }
   }
@@ -246,7 +246,6 @@ class Account {
         () => this.provider.isEnabledRequest(id, tokenData.access_token)
       )
         .then(this._checkStatus)
-        .then(Promise.resolve())
     }
   }
 
@@ -265,7 +264,6 @@ class Account {
         () => this.provider.enableRequest(id, tokenData.access_token)
       )
         .then(this._checkStatus)
-        .then(Promise.resolve())
     }
   }
 
@@ -284,7 +282,6 @@ class Account {
         () => this.provider.disableRequest(id, tokenData.access_token)
       )
         .then(this._checkStatus)
-        .then(Promise.resolve())
     }
   }
 
@@ -340,7 +337,7 @@ class Account {
         .then(res => {
           this.id = res.id
           this._saveTokenData(data)
-          return Promise.resolve(data)
+          return data
         })
     }
 
@@ -354,7 +351,7 @@ class Account {
           return fetchAccount(data)
         } else {
           this._saveTokenData(data)
-          return Promise.resolve(data)
+          return data
         }
       })
   }
@@ -384,7 +381,7 @@ class Account {
         .then(res => {
           this.id = res.id
           saveData(data)
-          return Promise.resolve(data)
+          return data
         })
     }
 
@@ -398,7 +395,7 @@ class Account {
           return fetchAccount(data)
         } else {
           saveData(data)
-          return Promise.resolve(data)
+          return data
         }
       })
   }
