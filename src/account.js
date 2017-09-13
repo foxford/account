@@ -27,10 +27,10 @@ class Account {
     let item
     try {
       item = window.localStorage.getItem(`account_${this.id}`)
-    } catch (err) { throw new Error('Missing item in localStorage') }
+    } catch (err) { throw new Error(`Missing account id: ${this.id}`) }
     try {
       return JSON.parse(item)
-    } catch (err) { throw new Error('Error occured when parse item from localStorage') }
+    } catch (err) { throw new Error('Error occured when parse from account data') }
   }
 
   /**
@@ -96,7 +96,7 @@ class Account {
       const tokenData = this._getTokenData()
 
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.refresh_token) throw new TypeError('Missing `refresh_token` in localStorage')
+      if (!tokenData && !tokenData.refresh_token) throw new TypeError(`Missing 'refresh_token' in account data`)
 
       return this._fetchRefreshToken(id, tokenData.refresh_token)
     }
@@ -111,7 +111,7 @@ class Account {
       const tokenData = this._getTokenData()
 
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.refresh_token) throw new TypeError('Missing `refresh_token` in localStorage')
+      if (!tokenData && !tokenData.refresh_token) throw new TypeError(`Missing 'refresh_token' in account data`)
 
       return this._fetchRetry(
         () => this.provider.revokeRefreshTokenRequest(id, tokenData.refresh_token)
@@ -136,7 +136,7 @@ class Account {
 
       if (!authKey) throw new TypeError(`Incorrect parameters 'authKey': ${authKey}`)
       if (!params) throw new TypeError(`Incorrect parameters 'params': ${params}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage')
+      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
 
       return this._fetchRetry(
         () => this.provider.linkRequest(authKey, params, tokenData.access_token)
@@ -156,7 +156,7 @@ class Account {
       const tokenData = this._getTokenData()
 
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage')
+      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
 
       return this._fetchRetry(
         () => this.provider.authRequest(id, tokenData.access_token)
@@ -178,7 +178,7 @@ class Account {
 
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
       if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage')
+      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
 
       return this._fetchRetry(
         () => this.provider.unlinkRequest(id, authKey, tokenData.access_token)
@@ -198,7 +198,7 @@ class Account {
       const tokenData = this._getTokenData()
 
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage')
+      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
 
       return this._fetchRetry(
         () => this.provider.accountRequest(id, tokenData.access_token)
@@ -217,7 +217,7 @@ class Account {
       const tokenData = this._getTokenData()
 
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage')
+      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
 
       return this._fetchRetry(
         () => this.provider.removeAccountRequest(id, tokenData.access_token)
@@ -240,7 +240,7 @@ class Account {
       const tokenData = this._getTokenData()
 
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage')
+      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
 
       return this._fetchRetry(
         () => this.provider.isEnabledRequest(id, tokenData.access_token)
@@ -258,7 +258,7 @@ class Account {
       const tokenData = this._getTokenData()
 
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage')
+      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
 
       return this._fetchRetry(
         () => this.provider.enableRequest(id, tokenData.access_token)
@@ -276,7 +276,7 @@ class Account {
       const tokenData = this._getTokenData()
 
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage')
+      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
 
       return this._fetchRetry(
         () => this.provider.disableRequest(id, tokenData.access_token)
@@ -294,7 +294,7 @@ class Account {
       this.id = null
       return Promise.resolve()
     } else {
-      throw new ReferenceError('Missing `this.id` in object')
+      throw new ReferenceError(`Missing account id: ${this.id}`)
     }
   }
 
@@ -303,7 +303,7 @@ class Account {
    * @param {*} data 
    */
   _saveTokenData (data) {
-    if (!this.id) throw new TypeError('Missing `id` in object')
+    if (!this.id) throw new TypeError(`Missing account id: ${this.id}`)
 
     const tokenData = this._getTokenData() || {}
 
