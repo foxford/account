@@ -2,6 +2,11 @@
 account client
 
 # How to use
+## Import module
+### Use es6 import
+```javascript
+import Account, { IdP } from 'account'
+```
 ### Initialize
 ```javascript
 const config = {
