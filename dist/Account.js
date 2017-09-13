@@ -215,8 +215,8 @@ var Account = function () {
       return function (data) {
         var tokenData = _this2._getTokenData();
 
-        if (!id) return Promise.reject(new TypeError('Incorrect parameter \'id\': ' + id));
-        if (!tokenData && !tokenData.refresh_token) return Promise.reject(new TypeError('Missing `refresh_token` in localStorage'));
+        if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+        if (!tokenData && !tokenData.refresh_token) throw new TypeError('Missing `refresh_token` in localStorage');
 
         return _this2._fetchRefreshToken(id, tokenData.refresh_token);
       };
@@ -235,8 +235,8 @@ var Account = function () {
       return function (data) {
         var tokenData = _this3._getTokenData();
 
-        if (!id) return Promise.reject(new TypeError('Incorrect parameter \'id\': ' + id));
-        if (!tokenData && !tokenData.refresh_token) return Promise.reject(new TypeError('Missing `refresh_token` in localStorage'));
+        if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+        if (!tokenData && !tokenData.refresh_token) throw new TypeError('Missing `refresh_token` in localStorage');
 
         return _this3._fetchRetry(function () {
           return _this3.provider.revokeRefreshTokenRequest(id, tokenData.refresh_token);
@@ -261,9 +261,9 @@ var Account = function () {
       return function (data) {
         var tokenData = _this4._getTokenData();
 
-        if (!authKey) return Promise.reject(new TypeError('Incorrect parameters \'authKey\': ' + authKey));
-        if (!params) return Promise.reject(new TypeError('Incorrect parameters \'params\': ' + params));
-        if (!tokenData && !tokenData.access_token) return Promise.reject(new TypeError('Missing `access_token` in localStorage'));
+        if (!authKey) throw new TypeError('Incorrect parameters \'authKey\': ' + authKey);
+        if (!params) throw new TypeError('Incorrect parameters \'params\': ' + params);
+        if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage');
 
         return _this4._fetchRetry(function () {
           return _this4.provider.linkRequest(authKey, params, tokenData.access_token);
@@ -286,8 +286,8 @@ var Account = function () {
       return function (data) {
         var tokenData = _this5._getTokenData();
 
-        if (!id) return Promise.reject(new TypeError('Incorrect parameter \'id\': ' + id));
-        if (!tokenData && !tokenData.access_token) return Promise.reject(new TypeError('Missing `access_token` in localStorage'));
+        if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+        if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage');
 
         return _this5._fetchRetry(function () {
           return _this5.provider.authRequest(id, tokenData.access_token);
@@ -311,9 +311,9 @@ var Account = function () {
       return function (data) {
         var tokenData = _this6._getTokenData();
 
-        if (!id) return Promise.reject(new TypeError('Incorrect parameter \'id\': ' + id));
-        if (!authKey) return Promise.reject(new TypeError('Incorrect parameter \'authKey\': ' + authKey));
-        if (!tokenData && !tokenData.access_token) return Promise.reject(new TypeError('Missing `access_token` in localStorage'));
+        if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+        if (!authKey) throw new TypeError('Incorrect parameter \'authKey\': ' + authKey);
+        if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage');
 
         return _this6._fetchRetry(function () {
           return _this6.provider.unlinkRequest(id, authKey, tokenData.access_token);
@@ -336,8 +336,8 @@ var Account = function () {
       return function (data) {
         var tokenData = _this7._getTokenData();
 
-        if (!id) return Promise.reject(new TypeError('Incorrect parameter \'id\': ' + id));
-        if (!tokenData && !tokenData.access_token) return Promise.reject(new TypeError('Missing `access_token` in localStorage'));
+        if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+        if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage');
 
         return _this7._fetchRetry(function () {
           return _this7.provider.accountRequest(id, tokenData.access_token);
@@ -359,8 +359,8 @@ var Account = function () {
       return function (data) {
         var tokenData = _this8._getTokenData();
 
-        if (!id) return Promise.reject(new TypeError('Incorrect parameter \'id\': ' + id));
-        if (!tokenData && !tokenData.access_token) return Promise.reject(new TypeError('Missing `access_token` in localStorage'));
+        if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+        if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage');
 
         return _this8._fetchRetry(function () {
           return _this8.provider.removeAccountRequest(id, tokenData.access_token);
@@ -384,8 +384,8 @@ var Account = function () {
       return function (data) {
         var tokenData = _this9._getTokenData();
 
-        if (!id) return Promise.reject(new TypeError('Incorrect parameter \'id\': ' + id));
-        if (!tokenData && !tokenData.access_token) return Promise.reject(new TypeError('Missing `access_token` in localStorage'));
+        if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+        if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage');
 
         return _this9._fetchRetry(function () {
           return _this9.provider.isEnabledRequest(id, tokenData.access_token);
@@ -406,8 +406,8 @@ var Account = function () {
       return function (data) {
         var tokenData = _this10._getTokenData();
 
-        if (!id) return Promise.reject(new TypeError('Incorrect parameter \'id\': ' + id));
-        if (!tokenData && !tokenData.access_token) return Promise.reject(new TypeError('Missing `access_token` in localStorage'));
+        if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+        if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage');
 
         return _this10._fetchRetry(function () {
           return _this10.provider.enableRequest(id, tokenData.access_token);
@@ -428,8 +428,8 @@ var Account = function () {
       return function (data) {
         var tokenData = _this11._getTokenData();
 
-        if (!id) return Promise.reject(new TypeError('Incorrect parameter \'id\': ' + id));
-        if (!tokenData && !tokenData.access_token) return Promise.reject(new TypeError('Missing `access_token` in localStorage'));
+        if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+        if (!tokenData && !tokenData.access_token) throw new TypeError('Missing `access_token` in localStorage');
 
         return _this11._fetchRetry(function () {
           return _this11.provider.disableRequest(id, tokenData.access_token);
@@ -449,7 +449,7 @@ var Account = function () {
         this.id = null;
         return Promise.resolve();
       } else {
-        return Promise.reject(new ReferenceError('Missing `this.id` in object'));
+        throw new ReferenceError('Missing `this.id` in object');
       }
     }
 
@@ -488,8 +488,8 @@ var Account = function () {
     value: function _fetchToken(authKey, params) {
       var _this12 = this;
 
-      if (!authKey) return Promise.reject(new TypeError('Incorrect parameter \'authKey\': ' + authKey));
-      if (!params) return Promise.reject(new TypeError('Incorrect parameter \'params\': ' + params));
+      if (!authKey) throw new TypeError('Incorrect parameter \'authKey\': ' + authKey);
+      if (!params) throw new TypeError('Incorrect parameter \'params\': ' + params);
 
       var fetchAccount = function fetchAccount(data) {
         return _this12._fetchRetry(function () {
@@ -522,8 +522,8 @@ var Account = function () {
     value: function _fetchRefreshToken(id, refreshToken) {
       var _this13 = this;
 
-      if (!id) return Promise.reject(new TypeError('Incorrect parameter \'id\': ' + id));
-      if (!refreshToken) return Promise.reject(new TypeError('Incorrect parameter \'refreshToken\': ' + refreshToken));
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!refreshToken) throw new TypeError('Incorrect parameter \'refreshToken\': ' + refreshToken);
 
       var saveData = function saveData(data) {
         if (!data.refresh_token) {
