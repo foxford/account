@@ -249,8 +249,7 @@ var Account = function () {
     this.retryDelay = config.retryDelay || AJAX_RETRY_DELAY;
     this.leeway = config.leeway || LEEWAY;
     this.myAccountId = config.myAccountId || MY_ACCOUNT_ID;
-
-    this.id = null;
+    this.id = config.id || null;
   }
 
   /**
@@ -301,14 +300,6 @@ var Account = function () {
           return Promise.resolve(_this._getTokenData());
         }
       };
-      var refreshTokenById = function refreshTokenById(id) {
-        _this.id = id;
-        if (_this._isTokenExpired()) {
-          return _this._fetchRefreshToken(_this.myAccountId, _this._getTokenData().refresh_token);
-        } else {
-          return Promise.resolve(_this._getTokenData());
-        }
-      };
       var refreshToken = function refreshToken(_refreshToken) {
         if (_this._isTokenExpired()) {
           return _this._fetchRefreshToken(_this.myAccountId, _refreshToken);
@@ -316,15 +307,22 @@ var Account = function () {
           return Promise.resolve(_this._getTokenData());
         }
       };
+      var getTokenDataById = function getTokenDataById() {
+        if (_this._isTokenExpired()) {
+          return _this._fetchRefreshToken(_this.myAccountId, _this._getTokenData().refresh_token);
+        } else {
+          return Promise.resolve(_this._getTokenData());
+        }
+      };
 
       if (options && options.auth_key && options.params && options.params.client_token && options.params.grant_type) {
         return fetchToken(options.auth_key, options.params);
-      } else if (options && options.id) {
-        return refreshTokenById(options.id);
       } else if (options && options.refresh_token) {
         return refreshToken(options.refresh_token);
+      } else if (!options && this.id && this._getTokenData()) {
+        return getTokenDataById();
       } else {
-        return Promise.reject(new TypeError('Missing required options: `id` or `refresh_token`, or pair `authKey`, `params`'));
+        return Promise.reject(new TypeError('Missing required options:  pair `authKey`, `params` or `refresh_token` or missing token data'));
       }
     }
 

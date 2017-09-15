@@ -132,9 +132,6 @@ describe('Account', () => {
         { auth_key: undefined, params: undefined },
         { auth_key: null, params: null },
         { auth_key: '', params: '' },
-        { id: undefined },
-        { id: null },
-        { id: '' },
         { refresh_token: undefined },
         { refresh_token: null },
         { refresh_token: '' }
@@ -160,21 +157,10 @@ describe('Account', () => {
       account.signIn({ auth_key: authKey, params })
         .then(res => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(signInResponse))
+          assert.strictEqual(!!window.localStorage.getItem(`account_${signInId}`), true)
           done()
         })
         .catch(err => done(err))
-    })
-
-    it('Item saved in localStorage', () => {
-      assert.strictEqual(!!window.localStorage.getItem(`account_${signInId}`), true)
-    })
-
-    it('Succesful response from localStorage (`signInId`)', (done) => {
-      account.signIn({ id: signInId })
-        .then(res => {
-          assert.strictEqual(typeof res === 'object', true)
-          done()
-        })
     })
 
     it('Successfull response when token expired', (done) => {
@@ -182,9 +168,9 @@ describe('Account', () => {
       storage.expires_time = storage.expires_time - (storage.expires_in * 1000) - account.expiresLeeway
       window.localStorage.setItem(`account_${signInId}`, JSON.stringify(storage))
 
-      account.signIn({ id: signInId })
+      account.signIn({ auth_key: authKey, params })
         .then(res => {
-          assert.strictEqual(JSON.stringify(res), JSON.stringify(refreshResponse))
+          assert.strictEqual(JSON.stringify(res), JSON.stringify(signInResponse))
           done()
         })
     })
@@ -194,6 +180,19 @@ describe('Account', () => {
       account.signIn({ refresh_token: signInRefreshToken })
         .then(res => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(refreshResponse))
+          done()
+        })
+    })
+
+    it('Return token data from localStorage', (done) => {
+      const account2 = new Account({
+        provider: new IdP({ endpoint: 'https://mock-host' }),
+        id: signInId
+      })
+
+      account2.signIn()
+        .then(res => {
+          assert.strictEqual(typeof res === 'object', true)
           done()
         })
     })
@@ -521,7 +520,7 @@ describe('Account', () => {
     })
 
     it('AccountId from localStorage equal accountId from `get`', (done) => {
-      account.signIn({ id: signInId })
+      account.signIn({ auth_key: authKey, params })
         .then(account.get(id))
         .then(res => {
           assert.strictEqual(res.id, signInId)
