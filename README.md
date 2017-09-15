@@ -12,7 +12,8 @@ import Account, { IdP } from 'account'
 const config = {
   provider: new IdP({
     endpoint: '...host...'
-  })  // you can write your own provider or use default IdP provider
+  }),  // you can write your own provider or use default IdP provider
+  id: '..id...' // optional parameter (if you already know `id` you pass in `config` to avoid repeated request of token)
 }
 const account = new Account(config)
 ```
@@ -24,7 +25,7 @@ const params = {
   grant_type: 'client_credentials'
 }
 const accountId = '..id...'
-account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || { refresh_token: '...JWT TOKEN...' } */)
+account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
   .then((data) => {
     // {
     //   access_token: '...',
@@ -36,7 +37,7 @@ account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || 
 ```
 ### Refresh access token
 ```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || { refresh_token: '...JWT TOKEN...' } */)
+account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
   .then(account.refresh(id)) // id or 'me'
   .then((data) => {
     // {
@@ -48,7 +49,7 @@ account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || 
 ```
 ### Revoke refresh token
 ```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || { refresh_token: '...JWT TOKEN...' } */)
+account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
   .then(account.revoke(id)) // id or 'me'
   .then((data) => {
     // {
@@ -58,7 +59,7 @@ account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || 
 ```
 ### Link client's accounts
 ```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || { refresh_token: '...JWT TOKEN...' } */)
+account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
   .then(account.link(authKey, params))
   .then((data) => {
     // {
@@ -68,7 +69,7 @@ account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || 
 ```
 ### Get linked accounts
 ```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || { refresh_token: '...JWT TOKEN...' } */)
+account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
   .then(account.auth(id)) // id or 'me'
   .then((data) => {
     // [{
@@ -78,7 +79,7 @@ account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || 
 ```
 ### Delete account link
 ```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || { refresh_token: '...JWT TOKEN...' } */)
+account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
   .then(account.unlink(id, authKey)) // id or 'me'
   .then((data) => {
     // {
@@ -88,7 +89,7 @@ account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || 
 ```
 ### Get account info
 ```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { id: accountId } || { refresh_token: '...JWT TOKEN...' } */)
+account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
   .then(account.get(id)) // id or 'me'
   .then((data) => {
     // {
