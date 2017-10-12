@@ -228,7 +228,7 @@ function _classCallCheck(instance, Constructor) {
 
 var MAX_AJAX_RETRY = 3;
 var AJAX_RETRY_DELAY = 1000;
-var LEEWAY = 1000;
+var LEEWAY = 3000;
 var MY_ACCOUNT_ID = 'me';
 
 var Account = function () {
