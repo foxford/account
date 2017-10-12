@@ -1,6 +1,6 @@
 const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
-const LEEWAY = 1000
+const LEEWAY = 3000
 const MY_ACCOUNT_ID = 'me'
 
 class Account {
