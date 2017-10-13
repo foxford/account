@@ -47,14 +47,14 @@ class Account {
    */
   signIn (options) {
     const fetchToken = (authKey, params) => {
-      if (this._isTokenExpired()) {
+      if (this._isTokenExpired() || !this.id) {
         return this._fetchToken(authKey, params)
       } else {
         return Promise.resolve(this._getTokenData())
       }
     }
     const refreshToken = (refreshToken) => {
-      if (this._isTokenExpired()) {
+      if (this._isTokenExpired() || !this.id) {
         return this._fetchRefreshToken(this.myAccountId, refreshToken)
       } else {
         return Promise.resolve(this._getTokenData())
