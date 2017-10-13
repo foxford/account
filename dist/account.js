@@ -294,14 +294,14 @@ var Account = function () {
       var _this = this;
 
       var fetchToken = function fetchToken(authKey, params) {
-        if (_this._isTokenExpired()) {
+        if (_this._isTokenExpired() || !_this.id) {
           return _this._fetchToken(authKey, params);
         } else {
           return Promise.resolve(_this._getTokenData());
         }
       };
       var refreshToken = function refreshToken(_refreshToken) {
-        if (_this._isTokenExpired()) {
+        if (_this._isTokenExpired() || !_this.id) {
           return _this._fetchRefreshToken(_this.myAccountId, _refreshToken);
         } else {
           return Promise.resolve(_this._getTokenData());
