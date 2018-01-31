@@ -1,7 +1,10 @@
 {
-  "extends": "standard",
-  "rules": {
-    "no-undef": 0,
-    "camelcase": 0
+  "extends": ["adequate"],
+  "env":{
+    "mocha": true
+  },
+  "globals": {
+    "window": true,
+    "__VERSION__": true
   }
 }

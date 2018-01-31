@@ -5,9 +5,7 @@ export default function storageMock () {
     setItem: (key, value) => {
       storage[key] = value || ''
     },
-    getItem: (key) => {
-      return key in storage ? storage[key] : null
-    },
+    getItem: key => key in storage ? storage[key] : null,
     removeItem: (key) => {
       delete storage[key]
     },
@@ -16,7 +14,8 @@ export default function storageMock () {
     },
     key: (i) => {
       const keys = Object.keys(storage)
+
       return keys[i] || null
-    }
+    },
   }
 }

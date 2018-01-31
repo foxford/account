@@ -3,12 +3,12 @@ const { version } = require('./package.json')
 
 module.exports = {
   entry: {
-    Account: './src'
+    Account: './src',
   },
   output: {
     filename: './dist/account.js',
     libraryTarget: 'umd',
-    library: '[name]'
+    library: '[name]',
   },
   module: {
     rules: [{

@@ -1,4 +1,4 @@
-import Provider from './provider'
+import { Provider } from './provider'
 
 class IdP extends Provider {
   constructor (config) {
@@ -19,12 +19,12 @@ class IdP extends Provider {
     return new Request(uri, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         client_token,
-        grant_type
-      })
+        grant_type,
+      }),
     })
   }
 
@@ -37,8 +37,8 @@ class IdP extends Provider {
     return new Request(uri, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${refreshToken}`
-      }
+        'Authorization': `Bearer ${refreshToken}`,
+      },
     })
   }
 
@@ -51,8 +51,8 @@ class IdP extends Provider {
     return new Request(uri, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${refreshToken}`
-      }
+        'Authorization': `Bearer ${refreshToken}`,
+      },
     })
   }
 
@@ -68,12 +68,12 @@ class IdP extends Provider {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         client_token,
-        grant_type
-      })
+        grant_type,
+      }),
     })
   }
 
@@ -86,8 +86,8 @@ class IdP extends Provider {
     return new Request(uri, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+        'Authorization': `Bearer ${accessToken}`,
+      },
     })
   }
 
@@ -101,8 +101,8 @@ class IdP extends Provider {
     return new Request(uri, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+        'Authorization': `Bearer ${accessToken}`,
+      },
     })
   }
 
@@ -115,8 +115,8 @@ class IdP extends Provider {
     return new Request(uri, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+        'Authorization': `Bearer ${accessToken}`,
+      },
     })
   }
 
@@ -129,8 +129,8 @@ class IdP extends Provider {
     return new Request(uri, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+        'Authorization': `Bearer ${accessToken}`,
+      },
     })
   }
 
@@ -143,8 +143,8 @@ class IdP extends Provider {
     return new Request(uri, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+        'Authorization': `Bearer ${accessToken}`,
+      },
     })
   }
 
@@ -157,8 +157,8 @@ class IdP extends Provider {
     return new Request(uri, {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+        'Authorization': `Bearer ${accessToken}`,
+      },
     })
   }
 
@@ -171,8 +171,8 @@ class IdP extends Provider {
     return new Request(uri, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+        'Authorization': `Bearer ${accessToken}`,
+      },
     })
   }
 }

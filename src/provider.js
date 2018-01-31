@@ -1,3 +1,5 @@
+/* eslint class-methods-use-this: 0 */
+
 class Provider {
   accessTokenRequest () {
     throw new TypeError('Abstract method `accessTokenRequest` is not implemented')
@@ -45,3 +47,5 @@ class Provider {
 }
 
 export default Provider
+
+export { Provider }

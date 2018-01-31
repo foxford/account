@@ -1,7 +1,13 @@
+/* eslint promise/no-callback-in-promise: 0 */
 import 'isomorphic-fetch'
 import assert from 'assert'
-import storageMock from './mocks/storage-mock'
 import fetchMock from 'fetch-mock'
+import pino from 'pino'
+
+import Account from '../src/account'
+import IdP from '../src/idp'
+
+import storageMock from './mocks/storage-mock'
 import {
   signInResponse,
   signInRefreshToken,
@@ -14,11 +20,24 @@ import {
   authResponse,
   unLinkResponse,
   removeAccountResponse,
-  signInId
+  signInId,
 } from './mocks/response-mock'
 
-import Account from '../src/account'
-import IdP from '../src/idp'
+const logger = pino()
+
+const allErrors = list => list.map(next => assert.ok(next instanceof Error, true))
+
+const PromiseAllErrors = (fn, data) => new Promise((resolve, reject) => {
+  let errors = []
+
+  data.map(next => fn(next)
+    .then(res => reject(res))
+    .catch((error) => {
+      errors = errors.concat(error)
+      if (errors.length === data.length) resolve(errors)
+      if (!(error instanceof Error)) reject(new Error('Failed'))
+    }))
+})
 
 window.localStorage = storageMock() // imitation of localStorage in node environment
 
@@ -26,14 +45,37 @@ let account = null
 const authKey = 'oauth2.key'
 const params = {
   client_token: '12345',
-  grant_type: 'client_credentials'
+  grant_type: 'client_credentials',
 }
+
+describe('Promise.all errors', () => {
+  it('Handle multiple negative requests', (done) => {
+    const negative = () => Promise.reject(new Error('Error'))
+
+    PromiseAllErrors(negative, [1, 2, 3])
+      .then(allErrors)
+      .then(() => done())
+      .catch(logger.error)
+  })
+
+  it('Can\'t handle any positive request', (done) => {
+    const maybePositive = value => value === 2
+      ? Promise.resolve(true)
+      : Promise.reject(new Error('Error'))
+
+    PromiseAllErrors(maybePositive, [1, 2, 3])
+      .catch(() => {
+        assert.ok('Failed')
+        done()
+      })
+  })
+})
 
 describe('Account', () => {
   describe('construct', () => {
     it('create instance account', () => {
       account = new Account({
-        provider: new IdP({ endpoint: 'https://mock-host' })
+        provider: new IdP({ endpoint: 'https://mock-host' }),
       })
       assert.notEqual(account, undefined)
     })
@@ -43,22 +85,27 @@ describe('Account', () => {
     it('Return error when pass negative values', (done) => {
       try {
         account._checkStatus()
-      } catch (err) {
-        assert.equal(err instanceof Error, true)
+      } catch (error) {
+        assert.equal(error instanceof Error, true)
       }
       done()
     })
 
     it('Return response with 200 code', (done) => {
       fetchMock.once(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
       fetch(`${account.provider.endpoint}/auth/${authKey}/token`, { method: 'POST' })
         .then(account._checkStatus)
-        .then(response => {
+        .then((response) => {
           assert(response.status, 200)
+
+          return done()
+        })
+        .catch((error) => {
+          logger.error(error)
           done()
         })
     })
@@ -66,13 +113,13 @@ describe('Account', () => {
     it('Return error (404 code)', (done) => {
       fetchMock.postOnce(`${account.provider.endpoint}/auth/${authKey}/token`, {
         status: 404,
-        body: signInResponse
+        body: signInResponse,
       })
       fetch(`${account.provider.endpoint}/auth/${authKey}/token`, { method: 'POST' })
         .then(account._checkStatus)
-        .catch(err => {
-          assert.equal(err instanceof Error, true)
-          assert.equal(err.response.status, 404)
+        .catch((error) => {
+          assert.equal(error instanceof Error, true)
+          assert.equal(error.response.status, 404)
           done()
         })
     })
@@ -82,22 +129,28 @@ describe('Account', () => {
     it('Return error when pass negative values', (done) => {
       try {
         account._parseJSON()
-      } catch (err) {
-        assert.equal(err instanceof Error, true)
+      } catch (error) {
+        assert.equal(error instanceof Error, true)
       }
       done()
     })
 
     it('Return json object', (done) => {
       fetchMock.once(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
+
       fetch(`${account.provider.endpoint}/auth/${authKey}/token`, { method: 'POST' })
         .then(account._parseJSON)
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(signInResponse))
+
+          return done()
+        })
+        .catch((error) => {
+          logger.error(error)
           done()
         })
     })
@@ -106,19 +159,19 @@ describe('Account', () => {
   describe('signIn', () => {
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}/refresh`, {
-        body: refreshResponse
+        body: refreshResponse,
       }, {
-        methods: 'POST'
+        methods: 'POST',
       })
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
@@ -134,67 +187,67 @@ describe('Account', () => {
         { auth_key: '', params: '' },
         { refresh_token: undefined },
         { refresh_token: null },
-        { refresh_token: '' }
+        { refresh_token: '' },
       ]
-      const errors = []
 
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn(val)
-            .catch(err => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+      PromiseAllErrors(val => account.signIn(val), negativeValues)
+        .then(allErrors)
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('Successful response (`authKey` and `params`)', (done) => {
       account.signIn({ auth_key: authKey, params })
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(signInResponse))
           assert.strictEqual(!!window.localStorage.getItem(`account_${signInId}`), true)
-          done()
+
+          return done()
         })
-        .catch(err => done(err))
+        .catch(logger.error)
     })
 
     it('Successfull response when token expired', (done) => {
       const storage = JSON.parse(window.localStorage.getItem(`account_${signInId}`))
-      storage.expires_time = storage.expires_time - (storage.expires_in * 1000) - account.expiresLeeway
+
+      storage.expires_time = storage.expires_time -
+      (storage.expires_in * 1000) -
+      account.expiresLeeway
       window.localStorage.setItem(`account_${signInId}`, JSON.stringify(storage))
 
       account.signIn({ auth_key: authKey, params })
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(signInResponse))
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
 
     it('Successfull response (`refresh_token`)', (done) => {
       window.localStorage.removeItem(`account_${signInId}`)
       account.signIn({ refresh_token: signInRefreshToken })
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(refreshResponse))
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
 
     it('Return token data from localStorage', (done) => {
       const account2 = new Account({
         provider: new IdP({ endpoint: 'https://mock-host' }),
-        id: signInId
+        id: signInId,
       })
 
       account2.signIn()
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(typeof res === 'object', true)
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
   })
 
@@ -204,49 +257,49 @@ describe('Account', () => {
 
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${id}/refresh`, {
-        body: responseResult
+        body: responseResult,
       }, {
-        methods: 'POST'
+        methods: 'POST',
       })
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
 
     it('Return an error when pass negative values', (done) => {
-      const negativeValues = [ undefined, null, '' ]
-      const errors = []
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn({ auth_key: authKey, params })
-            .then(account.refresh(val))
-            .catch((err) => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+      const negativeValues = [undefined, null, '']
+
+      PromiseAllErrors(
+        val => account
+          .signIn({ auth_key: authKey, params })
+          .then(account.refresh(val))
+        , negativeValues
+      )
+        .then(allErrors)
+        .then(() => done())
+        .catch((error) => {
+          assert.fail(error)
+          done()
+        })
     })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.refresh(id))
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(responseResult))
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
 
     it('Access token from response equal access token from localStorage', () => {
@@ -262,49 +315,46 @@ describe('Account', () => {
 
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${id}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${id}/revoke`, {
-        body: responseResult
+        body: responseResult,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
 
     it('Return error when pass negative values', (done) => {
-      const negativeValues = [ undefined, null, '' ]
-      const errors = []
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn({ auth_key: authKey, params })
-            .then(account.revoke(val))
-            .catch((err) => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+      const negativeValues = [undefined, null, '']
+
+      PromiseAllErrors(
+        val => account
+          .signIn({ auth_key: authKey, params })
+          .then(account.revoke(val)),
+        negativeValues
+      )
+        .then(allErrors)
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.revoke(id))
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(responseResult))
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
 
     it('Refresh token from response equal refresh token from localStorage', () => {
@@ -317,19 +367,19 @@ describe('Account', () => {
   describe('link', () => {
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/link`, {
-        body: linkResponse
+        body: linkResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
@@ -342,130 +392,121 @@ describe('Account', () => {
         {},
         { authKey: undefined, params: undefined },
         { authKey: null, params: null },
-        { authKey: '', params: '' }
+        { authKey: '', params: '' },
       ]
-      const errors = []
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn({ auth_key: authKey, params })
-            .then(account.link(val))
-            .catch((err) => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+
+      PromiseAllErrors(
+        val => account
+          .signIn({ auth_key: authKey, params })
+          .then(account.link(val)),
+        negativeValues
+      )
+        .then(allErrors)
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.link(authKey, linkParams))
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(linkResponse))
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
   })
 
   describe('auth', () => {
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}/auth`, {
-        body: authResponse
+        body: authResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
 
     it('Return error when pass negative values', (done) => {
-      const negativeValues = [ undefined, null, '' ]
-      const errors = []
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn({ auth_key: authKey, params })
-            .then(account.auth(val))
-            .catch((err) => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+      const negativeValues = [undefined, null, '']
+
+      PromiseAllErrors(
+        val => account
+          .signIn({ auth_key: authKey, params })
+          .then(account.auth(val)),
+        negativeValues
+      )
+        .then(allErrors)
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.auth(myAccountId))
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(authResponse))
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
   })
 
   describe('unlink', () => {
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}/auth/${authKey}`, {
-        body: unLinkResponse
+        body: unLinkResponse,
       }, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
 
     it('Return error when pass negative values', (done) => {
-      const negativeValues = [ undefined, null, '' ]
-      const errors = []
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn({ auth_key: authKey, params })
-            .then(account.unlink(val))
-            .catch((err) => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+      const negativeValues = [undefined, null, '']
+
+      PromiseAllErrors(
+        val => account
+          .signIn({ auth_key: authKey, params })
+          .then(account.unlink(val)),
+        negativeValues
+      )
+        .then(allErrors)
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.unlink(myAccountId, authKey))
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(unLinkResponse))
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
   })
 
@@ -475,57 +516,59 @@ describe('Account', () => {
 
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${id}`, {
-        body: responseResult
+        body: responseResult,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
 
     it('Return error when pass negative values', (done) => {
-      const negativeValues = [ undefined, null, '' ]
-      const errors = []
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn({ auth_key: authKey, params })
-            .then(account.get(val))
-            .catch((err) => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+      const negativeValues = [undefined, null, '']
+
+      PromiseAllErrors(
+        val => account
+          .signIn({ auth_key: authKey, params })
+          .then(account
+            .get(val)),
+        negativeValues
+      )
+        .then(allErrors)
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('AccountId from `signIn` equal accountId from `get`', (done) => {
       let responseId = null
+
       account.signIn({ auth_key: authKey, params })
-        .then(res => {
+        .then((res) => {
           responseId = res.id
+
           return account.get(id)
         })
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(res.id, responseId)
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
 
     it('AccountId from localStorage equal accountId from `get`', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.get(id))
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(res.id, signInId)
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
   })
 
@@ -535,49 +578,47 @@ describe('Account', () => {
 
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${id}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${id}`, {
-        body: responseResult
+        body: responseResult,
       }, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
 
     it('Return error when pass negative values', (done) => {
-      const negativeValues = [ undefined, null, '' ]
-      const errors = []
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn({ auth_key: authKey, params })
-            .then(account.remove(val))
-            .catch((err) => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+      const negativeValues = [undefined, null, '']
+
+      PromiseAllErrors(
+        val => account
+          .signIn({ auth_key: authKey, params })
+          .then(account
+            .remove(val)),
+        negativeValues
+      )
+        .then(allErrors)
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('Successful response', (done) => {
       account.signIn({ auth_key: authKey, params })
         .then(account.remove(id))
-        .then(res => {
+        .then((res) => {
           assert.strictEqual(JSON.stringify(res), JSON.stringify(responseResult))
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
 
     it('AccountId from localStorage removed', () => {
@@ -588,59 +629,56 @@ describe('Account', () => {
   describe('isEnabled', () => {
     beforeEach(() => {
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}/refresh`, {
-        body: refreshResponse
+        body: refreshResponse,
       }, {
-        methods: 'POST'
+        methods: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
     })
     afterEach(() => window.localStorage.removeItem(`account_${signInId}`))
 
     it('Return error when pass negative values', (done) => {
-      const negativeValues = [ undefined, null, '' ]
-      const errors = []
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn({ refresh_token: signInRefreshToken })
-            .then(account.isEnabled(val))
-            .catch((err) => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+      const negativeValues = [undefined, null, '']
+
+      PromiseAllErrors(
+        val => account
+          .signIn({ refresh_token: signInRefreshToken })
+          .then(account
+            .isEnabled(val)),
+        negativeValues
+      )
+        .then(allErrors)
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('Response 204 (account enabled)', (done) => {
       fetchMock.once(`${account.provider.endpoint}/accounts/${signInId}/enabled`, {
-        status: 204
+        status: 204,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
       account.signIn({ refresh_token: signInRefreshToken })
         .then(account.isEnabled(signInId))
-        .then(data => { done() })
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('Response 404 (account disabled)', (done) => {
       fetchMock.once(`${account.provider.endpoint}/accounts/${signInId}/enabled`, {
-        status: 404
+        status: 404,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
       account.signIn({ refresh_token: signInRefreshToken })
         .then(account.isEnabled(signInId))
-        .catch((err) => {
-          assert.equal(err instanceof Error, true)
-          assert.equal(err.response.status, 404)
+        .catch((error) => {
+          assert.equal(error instanceof Error, true)
+          assert.equal(error.response.status, 404)
           done()
         })
     })
@@ -649,110 +687,103 @@ describe('Account', () => {
   describe('enable', () => {
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}/refresh`, {
-        body: refreshResponse
+        body: refreshResponse,
       }, {
-        methods: 'POST'
+        methods: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
     beforeEach(() => {
       fetchMock.mock(`${account.provider.endpoint}/accounts/${signInId}/enabled`, {
-        status: 204
+        status: 204,
       }, {
-        method: 'PUT'
+        method: 'PUT',
       })
     })
 
     it('Return error when pass negative values', (done) => {
-      const negativeValues = [ undefined, null, '' ]
-      const errors = []
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn({ refresh_token: signInRefreshToken })
-            .then(account.enable(val))
-            .catch((err) => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+      const negativeValues = [undefined, null, '']
+
+      PromiseAllErrors(
+        val => account
+          .signIn({ refresh_token: signInRefreshToken })
+          .then(account
+            .enable(val)),
+        negativeValues
+      )
+        .then(allErrors)
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('Successfull response (account enabled)', (done) => {
       account.signIn({ refresh_token: signInRefreshToken })
         .then(account.enable(signInId))
-        .then(data => { done() })
+        .then(() => done())
+        .catch(logger.error)
     })
   })
 
   describe('disable', () => {
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}/refresh`, {
-        body: refreshResponse
+        body: refreshResponse,
       }, {
-        methods: 'POST'
+        methods: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
     })
     after(() => window.localStorage.removeItem(`account_${signInId}`))
     beforeEach(() => {
       fetchMock.mock(`${account.provider.endpoint}/accounts/${signInId}/enabled`, {
-        status: 204
+        status: 204,
       }, {
-        method: 'DELETE'
+        method: 'DELETE',
       })
     })
 
     it('Return error when pass negative values', (done) => {
-      const negativeValues = [ undefined, null, '' ]
-      const errors = []
-      for (let i = 0; i < negativeValues.length; i++) {
-        ((val, counter) => {
-          account.signIn({ refresh_token: signInRefreshToken })
-            .then(account.disable(val))
-            .catch((err) => {
-              errors.push(err)
-              assert.equal(err instanceof Error, true)
-              if (counter === negativeValues.length - 1) {
-                assert.equal(errors.length, negativeValues.length)
-                done()
-              }
-            })
-        })(negativeValues[i], i)
-      }
+      const negativeValues = [undefined, null, '']
+
+      PromiseAllErrors(
+        val => account
+          .signIn({ refresh_token: signInRefreshToken })
+          .then(account.disable(val)),
+        negativeValues
+      )
+        .then(allErrors)
+        .then(() => done())
+        .catch(logger.error)
     })
 
     it('Successfull response (account disabled)', (done) => {
       account.signIn({ refresh_token: signInRefreshToken })
         .then(account.disable(signInId))
-        .then(data => { done() })
+        .then(() => done())
+        .catch(logger.error)
     })
   })
 
   describe('signOut', () => {
     before(() => {
       fetchMock.mock(`${account.provider.endpoint}/auth/${authKey}/token`, {
-        body: signInResponse
+        body: signInResponse,
       }, {
-        method: 'POST'
+        method: 'POST',
       })
       fetchMock.mock(`${account.provider.endpoint}/accounts/${myAccountId}`, {
-        body: accountResponse
+        body: accountResponse,
       }, {
-        method: 'GET'
+        method: 'GET',
       })
     })
 
@@ -762,8 +793,10 @@ describe('Account', () => {
         .then(() => {
           assert.strictEqual(window.localStorage.getItem(`account_${signInId}`), null)
           assert.strictEqual(account.id, null)
-          done()
+
+          return done()
         })
+        .catch(logger.error)
     })
   })
 })
