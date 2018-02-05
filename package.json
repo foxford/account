@@ -10,12 +10,15 @@
   "license": "MIT",
   "scripts": {
     "start": "npm run test && npm run build",
-    "test:lint": "./node_modules/eslint/bin/eslint.js .",
-    "test:mocha": "./node_modules/.bin/mocha",
+    "test:lint": "BABEL_DISABLE_CACHE=1 node_modules/eslint/bin/eslint.js .",
+    "test:mocha": "BABEL_DISABLE_CACHE=1 node_modules/.bin/mocha --recursive \"test/**/*.test.js\"",
     "test": "npm run test:lint && npm run test:mocha",
-    "build": "./node_modules/.bin/webpack"
+    "build": "NODE_ENV=production node_modules/.bin/webpack -p",
+    "prepare": "npm start"
   },
-  "dependencies": {},
+  "dependencies": {
+    "debug": "^3.1.0"
+  },
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.2",
@@ -25,15 +28,20 @@
     "babel-preset-stage-0": "^6.24.1",
     "babel-register": "^6.26.0",
     "es6-promise": "^4.1.1",
+    "eslint": "^4.16.0",
     "eslint-config-adequate": "^1.1.0",
     "eslint-loader": "^1.9.0",
-    "eslint": "^4.16.0",
+    "eslint-plugin-flowtype": "^2.42.0",
+    "eslint-plugin-flowtype-errors": "^3.3.7",
     "fetch-mock": "^5.12.2",
+    "flow-bin": "^0.64.0",
+    "flow-typed": "^2.3.0",
     "isomorphic-fetch": "^2.2.1",
-    "jsdom-global": "3.0.2",
     "jsdom": "11.2.0",
+    "jsdom-global": "3.0.2",
     "mocha": "^3.5.0",
     "pino": "^4.10.3",
+    "rimraf": "^2.6.2",
     "webpack": "^3.5.5"
   }
 }
