@@ -1,0 +1,14 @@
+/** @flow */
+export interface AccountProvider {
+  accessTokenRequest(): Request | Request | void;
+  refreshAccessTokenRequest(): Request | void;
+  revokeRefreshTokenRequest(): Request | void;
+  linkRequest(): Request | void;
+  authRequest(): Request | void;
+  unlinkRequest(): Request | void;
+  accountRequest(): Request | void;
+  removeAccountRequest(): Request | void;
+  isEnabledRequest(): Request | void;
+  enableRequest(): Request | void;
+  disableRequest(): Request | void;
+}

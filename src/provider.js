@@ -1,6 +1,9 @@
+/** @flow */
 /* eslint class-methods-use-this: 0 */
 
-class Provider {
+import type { AccountProvider } from './provider.js.flow'
+
+export default class Provider implements AccountProvider {
   accessTokenRequest () {
     throw new TypeError('Abstract method `accessTokenRequest` is not implemented')
   }
@@ -45,7 +48,5 @@ class Provider {
     throw new TypeError('Abstract method `disableRequest` is not implemented')
   }
 }
-
-export default Provider
 
 export { Provider }

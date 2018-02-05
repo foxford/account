@@ -1,0 +1,51 @@
+/** @flow */
+// $FlowFixMe
+import typeof { Provider } from './provider'
+
+export interface IAbstractStorage {
+  setItem(key: string, value: string): void;
+  getItem(key: string): string;
+  removeItem(key: string): void;
+}
+
+declare export var VERSION: string;
+
+export type RespP = Promise<*>
+
+export type CallableP<T> = () => T
+
+export type AccountConfig = {
+  provider: Provider,
+  retries: number,
+  retryDelay: number,
+  leeway: number,
+  myAccountId: string,
+  id: string | null,
+}
+
+export type SignInOptions = {
+  auth_key: string,
+  refresh_token: ?string,
+  params: {
+    client_token: string,
+    grant_type: string,
+  }
+}
+
+declare type RefreshableData = {
+  refresh_token?: string,
+}
+
+export type UnrefreshableData = {
+  access_token?: string,
+  expires_in?: number,
+  expires_time?: number,
+}
+
+export type TokenData = UnrefreshableData & RefreshableData
+
+export class AbstractStorage implements IAbstractStorage {
+  setItem: (key: string, value: string) => void
+  getItem: (key: string) => string
+  removeItem: (key: string) => void
+}

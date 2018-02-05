@@ -1,0 +1,12 @@
+/** @flow */
+var __VERSION__: string
+
+var process: {
+  env: {
+    NODE_ENV: string
+  }
+}
+
+declare module 'debug' {
+  declare module.exports: (*) => Function
+}

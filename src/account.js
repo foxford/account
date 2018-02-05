@@ -1,16 +1,43 @@
+/** @flow */
+import { nvrnt } from './utils/invariant'
+import { saveData, isEnv } from './utils/index'
+
+import type
+{
+  RespP, CallableP,
+  AbstractStorage, AccountConfig,
+  SignInOptions, TokenData,
+} from './account.js.flow'
+// $FlowFixMe
+import typeof { Provider } from './provider'
+
 const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
 const LEEWAY = 3000
 const MY_ACCOUNT_ID = 'me'
 
-class Account {
-  static get version () {
+const debug = nvrnt('account', isEnv(process.env.NODE_ENV))
+
+export default class Account {
+  provider: Provider;
+  storage: AbstractStorage;
+
+  retries: number;
+  retryDelay: number;
+  leeway: number;
+  myAccountId: string;
+  id: string | null;
+
+  static get version (): string {
     return __VERSION__
   }
 
-  constructor (config) {
+  constructor (config: AccountConfig, storage: AbstractStorage) {
     if (!config || !config.provider) throw new TypeError('Missing `provider` in config')
 
+    if (!storage) throw new TypeError('Storage is not defined')
+
+    this.storage = storage
     this.provider = config.provider
     this.retries = config.retries || MAX_AJAX_RETRY
     this.retryDelay = config.retryDelay || AJAX_RETRY_DELAY
@@ -22,22 +49,60 @@ class Account {
   /**
    * Get token data
    */
-  _getTokenData () {
+  _getTokenData (): TokenData {
     let item
 
-    try {
-      item = window.localStorage.getItem(`account_${this.id}`)
-    } catch (error) { throw new Error(`Missing account id: ${this.id}`) }
+    if (!this.id) {
+      debug('Try to get access to account data but no ID was specified')
+
+      return {}
+    }
 
     try {
-      return JSON.parse(item)
+      item = this.storage.getItem(`account_${this.id}`)
+    } catch (error) { throw new Error(`Missing account id: ${this.id || ''}`) }
+
+    if (!item && typeof item !== 'string') {
+      debug('There is and error while parsing token data')
+
+      return {}
+    }
+
+    try {
+      return JSON.parse(item) || {}
     } catch (error) { throw new Error('Error occured when parse from account data') }
+  }
+
+  _getTokenDataP (): Promise<TokenData> {
+    return new Promise((resolve, reject) => {
+      let item
+
+      if (!this.id) {
+        debug('Try to get access to account data but no ID was specified')
+
+        return resolve({})
+      }
+
+      try {
+        item = this.storage.getItem(`account_${this.id}`)
+      } catch (error) {
+        return reject(new Error(`Missing account id: ${this.id}`))
+      }
+
+      if (!item && typeof item !== 'string') return resolve({})
+
+      try {
+        return resolve(JSON.parse(item) || {})
+      } catch (error) {
+        return reject(new Error('Error occured when parse from account data'))
+      }
+    })
   }
 
   /**
    * Check token expire
    */
-  _isTokenExpired () {
+  _isTokenExpired (): boolean {
     const tokenData = this._getTokenData()
 
     return !tokenData || !tokenData.expires_time
@@ -47,17 +112,16 @@ class Account {
   /**
    * Get access token
    */
-  signIn (options) {
-    // console.log('THIS', this.id)
+  signIn (options: SignInOptions): RespP {
     const fetchToken = (authKey, params) => {
       if (this._isTokenExpired() || !this.id) {
         return this._fetchToken(authKey, params)
       }
 
-      return Promise.resolve(this._getTokenData())
+      return this._getTokenDataP()
     }
 
-    const refreshToken = (token) => {
+    const refreshToken = (token: string) => {
       if (this._isTokenExpired() || !this.id) {
         return this._fetchRefreshToken(this.myAccountId, token)
       }
@@ -98,7 +162,7 @@ class Account {
    * Refresh access token
    * @param {*} id
    */
-  refresh (id) {
+  refresh (id: string) {
     return () => {
       const tokenData = this._getTokenData()
 
@@ -113,7 +177,7 @@ class Account {
    * Revoke refresh token
    * @param {*} id
    */
-  revoke (id) {
+  revoke (id: string): CallableP<RespP> {
     return () => {
       const tokenData = this._getTokenData()
 
@@ -137,7 +201,7 @@ class Account {
    * @param {*} authKey
    * @param {*} params
    */
-  link (authKey, params) {
+  link (authKey: string, params: {} = {}): CallableP<RespP> {
     return () => {
       const tokenData = this._getTokenData()
 
@@ -156,7 +220,7 @@ class Account {
    * Get linked accounts
    * @param {*} id
    */
-  auth (id) {
+  auth (id: string): CallableP<RespP> {
     return () => {
       const tokenData = this._getTokenData()
 
@@ -174,7 +238,7 @@ class Account {
    * @param {*} id
    * @param {*} authKey
    */
-  unlink (id, authKey) {
+  unlink (id: string, authKey: string): CallableP<RespP> {
     return () => {
       const tokenData = this._getTokenData()
 
@@ -193,7 +257,7 @@ class Account {
    * Get account info
    * @param {*} id
    */
-  get (id) {
+  get (id: string): CallableP<RespP> {
     return () => {
       const tokenData = this._getTokenData()
 
@@ -210,7 +274,7 @@ class Account {
   /**
    * Remove account
    */
-  remove (id) {
+  remove (id: string): CallableP<RespP> {
     return () => {
       const tokenData = this._getTokenData()
 
@@ -233,7 +297,7 @@ class Account {
    * Check is account enabled
    * @param {*} id
    */
-  isEnabled (id) {
+  isEnabled (id: string): CallableP<RespP> {
     return () => {
       const tokenData = this._getTokenData()
 
@@ -249,7 +313,7 @@ class Account {
    * Enable account
    * @param {*} id
    */
-  enable (id) {
+  enable (id: string): CallableP<RespP> {
     return () => {
       const tokenData = this._getTokenData()
 
@@ -265,7 +329,7 @@ class Account {
    * Disable account
    * @param {*} id
    */
-  disable (id) {
+  disable (id: string): CallableP<RespP> {
     return () => {
       const tokenData = this._getTokenData()
 
@@ -280,24 +344,22 @@ class Account {
   /**
    * Delete access token
    */
-  signOut () {
+  signOut (): Promise<void> {
     if (this.id) {
-      window.localStorage.removeItem(`account_${this.id}`)
+      this.storage.removeItem(`account_${this.id}`)
       this.id = null
 
       return Promise.resolve()
     }
-    throw new ReferenceError(`Missing account id: ${this.id}`)
+    throw new ReferenceError(`Missing account id: ${this.id || ''}`)
   }
 
   /**
    * Save token data
    * @param {*} data
    */
-  _saveTokenData (data) {
-    if (!this.id) throw new TypeError(`Missing account id: ${this.id}`)
-
-    const tokenData = this._getTokenData() || {}
+  _saveTokenData (data: TokenData = {}): void {
+    const tokenData = this._getTokenData()
 
     if (data && data.access_token) {
       tokenData.access_token = data.access_token
@@ -307,16 +369,16 @@ class Account {
     }
     if (data && data.expires_in) {
       tokenData.expires_in = data.expires_in
-      tokenData.expires_time = Date.now() + (data.expires_in * 1000)
+      tokenData.expires_time = Date.now() + ((Number(data.expires_in) || 0) * 1000)
     }
 
-    window.localStorage.setItem(`account_${this.id}`, JSON.stringify(tokenData))
+    this.storage.setItem(`account_${this.id || ''}`, JSON.stringify(tokenData))
   }
 
   /**
    * Fetch access token
    */
-  _fetchToken (authKey, params) {
+  _fetchToken (authKey: string, params: {} = {}): RespP {
     if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
     if (!params) throw new TypeError(`Incorrect parameter 'params': ${params}`)
 
@@ -347,20 +409,20 @@ class Account {
   /**
    * Fetch refresh token
    */
-  _fetchRefreshToken (id, refreshToken) {
+  _fetchRefreshToken (id: string, refreshToken: string = ''): RespP {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
-    const saveData = (data) => {
-      if (!data.refresh_token) {
-        const newData = Object.create(data)
+    // const saveData = (data: TokenData) => {
+    //   if (!data.refresh_token) {
+    //     const newData: TokenData = Object.create(data)
 
-        newData.refresh_token = refreshToken
-        this._saveTokenData(newData)
-      } else {
-        this._saveTokenData(data)
-      }
-    }
+    //     newData.refresh_token = refreshToken
+    //     this._saveTokenData(newData)
+    //   } else {
+    //     this._saveTokenData(data)
+    //   }
+    // }
 
     const fetchAccount = data => this._fetchRetry(() => this.provider
       .accountRequest(this.myAccountId, data.access_token))
@@ -368,7 +430,9 @@ class Account {
       .then(this._parseJSON)
       .then((res) => {
         this.id = res.id
-        saveData(data)
+        // saveData(data)
+
+        saveData(tokenData => this._saveTokenData(tokenData), data)
 
         return data
       })
@@ -377,10 +441,10 @@ class Account {
       .then(this._checkStatus)
       .then(this._parseJSON)
       .then((data) => {
-        if (!this.id) {
-          return fetchAccount(data)
-        }
-        saveData(data)
+        if (!this.id) return fetchAccount(data)
+
+        // saveData(data)
+        saveData(tokenData => this._saveTokenData(tokenData), data)
 
         return data
       })
@@ -390,7 +454,7 @@ class Account {
    * Fetch with retry logic
    * @param {*} requestFn
    */
-  _fetchRetry (requestFn) {
+  _fetchRetry (requestFn: () => Request): Promise<Response> {
     if (!requestFn) throw new TypeError(`Missing 'requestFn': ${requestFn}`)
 
     return new Promise((resolve, reject) => {
@@ -419,27 +483,39 @@ class Account {
    * Check http status and retrurn response or response with error
    * @param {*} response
    */
-  _checkStatus (response) { // eslint-disable-line class-methods-use-this
-    if (!response) throw new TypeError(`Missing 'response': ${response}`)
+  // eslint-disable-next-line class-methods-use-this
+  _checkStatus (response: Response): Promise<Response> {
+    return new Promise((resolve, reject) => {
+      if (!response) return reject(new TypeError(`Missing 'response': ${response}`))
 
-    if (response.status && response.status >= 200 && response.status < 300) {
-      return response
-    }
-    const error = new Error(response.statusText)
+      if (response.status && response.status >= 200 && response.status < 300) {
+        return resolve(response)
+      }
 
-    error.response = response
-    throw error
+      const error = new Error(response.statusText)
+
+      // $FlowFixMe
+      error.response = response
+      // TODO: We should not add smth to an error object. Have to change this weird behaviour
+
+      return reject(error)
+    })
   }
 
   /**
    * Parse response to JSON
    * @param {*} response
    */
-  _parseJSON (response) { // eslint-disable-line class-methods-use-this
+  // eslint-disable-next-line class-methods-use-this
+  _parseJSON (response: Response | '' = ''): Promise<Object> {
     if (!response) throw new TypeError(`Missing 'response': ${response}`)
 
-    return response.json()
+    try {
+      return response.json()
+    } catch (error) {
+      throw new Error('Response is not a JSON')
+    }
   }
 }
 
-export default Account
+export { Account }

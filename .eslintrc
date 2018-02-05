@@ -1,10 +1,13 @@
 {
-  "extends": ["adequate"],
+  "extends": ["adequate", "plugin:flowtype/recommended"],
+  "plugins": ["flowtype", "flowtype-errors"],
   "env":{
     "mocha": true
   },
   "globals": {
     "window": true,
-    "__VERSION__": true
+    "__VERSION__": true,
+    "setTimeout": true,
+    "process": true
   }
 }

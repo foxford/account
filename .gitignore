@@ -115,8 +115,8 @@ data/
 # Cache
 /babel_cache
 
-#Types
-/flow-typed
-
 /out
 /build
+
+# Types
+/flow-typed

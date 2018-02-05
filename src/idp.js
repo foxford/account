@@ -1,7 +1,16 @@
+/** @flow */
+// $FlowFixMe
 import { Provider } from './provider'
 
-class IdP extends Provider {
-  constructor (config) {
+type ClientToken = {
+  client_token: string,
+  grant_type: string,
+}
+
+export default class IdP extends Provider {
+  endpoint: string;
+
+  constructor (config: {endpoint: string}) {
     if (!config && !config.endpoint) throw new TypeError('Missing `endpoint` in config')
 
     super()
@@ -9,7 +18,7 @@ class IdP extends Provider {
     this.endpoint = config.endpoint
   }
 
-  accessTokenRequest (authKey, { client_token, grant_type }) {
+  accessTokenRequest (authKey: string, { client_token, grant_type }: ClientToken) {
     if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
     if (!client_token) throw new TypeError(`Incorrect parameters 'client_token': ${client_token}`)
     if (!grant_type) throw new TypeError(`Incorrect parameters 'grant_type': ${grant_type}`)
@@ -28,7 +37,7 @@ class IdP extends Provider {
     })
   }
 
-  refreshAccessTokenRequest (id, refreshToken) {
+  refreshAccessTokenRequest (id: string, refreshToken: string) {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
@@ -42,7 +51,7 @@ class IdP extends Provider {
     })
   }
 
-  revokeRefreshTokenRequest (id, refreshToken) {
+  revokeRefreshTokenRequest (id: string, refreshToken: string) {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
@@ -56,7 +65,8 @@ class IdP extends Provider {
     })
   }
 
-  linkRequest (authKey, { client_token, grant_type }, accessToken) {
+  // eslint-disable-next-line max-len
+  linkRequest (authKey: string, { client_token, grant_type }: ClientToken, accessToken: string) {
     if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
     if (!client_token) throw new TypeError(`Incorrect parameters 'client_token': ${client_token}`)
     if (!grant_type) throw new TypeError(`Incorrect parameters 'grant_type': ${grant_type}`)
@@ -77,7 +87,7 @@ class IdP extends Provider {
     })
   }
 
-  authRequest (id, accessToken) {
+  authRequest (id: string, accessToken: string) {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
@@ -91,7 +101,7 @@ class IdP extends Provider {
     })
   }
 
-  unlinkRequest (id, authKey, accessToken) {
+  unlinkRequest (id: string, authKey: string, accessToken: string) {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
     if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
@@ -106,7 +116,7 @@ class IdP extends Provider {
     })
   }
 
-  accountRequest (id, accessToken) {
+  accountRequest (id: string, accessToken: string) {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
@@ -120,7 +130,7 @@ class IdP extends Provider {
     })
   }
 
-  removeAccountRequest (id, accessToken) {
+  removeAccountRequest (id: string, accessToken: string) {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
@@ -134,7 +144,7 @@ class IdP extends Provider {
     })
   }
 
-  isEnabledRequest (id, accessToken) {
+  isEnabledRequest (id: string, accessToken: string) {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
@@ -148,7 +158,7 @@ class IdP extends Provider {
     })
   }
 
-  enableRequest (id, accessToken) {
+  enableRequest (id: string, accessToken: string) {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
@@ -162,7 +172,7 @@ class IdP extends Provider {
     })
   }
 
-  disableRequest (id, accessToken) {
+  disableRequest (id: string, accessToken: string) {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
@@ -177,4 +187,4 @@ class IdP extends Provider {
   }
 }
 
-export default IdP
+export { IdP }
