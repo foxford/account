@@ -492,7 +492,7 @@ export default class Account {
         return resolve(response)
       }
 
-      const error = new Error(response.statusText)
+      const error = new Error(response.statusText || `Invalid request. Status: ${response.status}`)
 
       // $FlowFixMe
       error.response = response

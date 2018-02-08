@@ -1,12 +1,28 @@
 {
-  "name": "account",
+  "name": "@netology-group/account",
+  "description": "account client",
   "version": "1.1.0",
   "main": "dist/account.js",
-  "repository": "https://github.com/foxford/account.git",
-  "author": "http://foxford.ru",
+  "author": "Netology Group",
+  "homepage": "https://github.com/netology-group/account#readme",
   "contributors": [
     "Elay <e.tolchennikov@netology-group.ru>"
   ],
+  "bugs": {
+    "url": "https://github.com/netology-group/account/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/netology-group/account.git"
+  },
+  "keywords": [
+    "jwt",
+    "authentication"
+  ],
+  "directories": {
+    "test": "test",
+    "lib": "dist"
+  },
   "license": "MIT",
   "scripts": {
     "start": "npm run test && npm run build",
