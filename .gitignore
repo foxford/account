@@ -119,4 +119,7 @@ data/
 /build
 
 # Types
-/flow-typed
+flow-typed/
+
+# Bundle
+dist/

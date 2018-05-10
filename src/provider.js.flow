@@ -1,14 +1,29 @@
 /** @flow */
+export type Id = string;
+
+export type Key = string;
+
+export type Token = string;
+
+export type ClientToken = {
+  client_token: Token,
+  grant_type: string,
+};
+
+export type EndpointConfig = {
+  endpoint: string
+}
+
 export interface AccountProvider {
-  accessTokenRequest(): Request | Request | void;
-  refreshAccessTokenRequest(): Request | void;
-  revokeRefreshTokenRequest(): Request | void;
-  linkRequest(): Request | void;
-  authRequest(): Request | void;
-  unlinkRequest(): Request | void;
-  accountRequest(): Request | void;
-  removeAccountRequest(): Request | void;
-  isEnabledRequest(): Request | void;
-  enableRequest(): Request | void;
-  disableRequest(): Request | void;
+  accessTokenRequest(a: Key, b: ClientToken): Request | void;
+  refreshAccessTokenRequest(a: Id, b: Token): Request | void;
+  revokeRefreshTokenRequest(a: Id, b: Token): Request | void;
+  linkRequest(a: Key, b: ClientToken, c: Token): Request | void;
+  authRequest(a: Id, b: Token): Request | void;
+  unlinkRequest(a: Id, b: Key, c: Token): Request | void;
+  accountRequest(a: Id, b: Token): Request | void;
+  removeAccountRequest(a: Id, b: Token): Request | void;
+  isEnabledRequest(a: Id, b: Token): Request | void;
+  enableRequest(a: Id, b: Token): Request | void;
+  disableRequest(id: Id, b: Token): Request | void;
 }

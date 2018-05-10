@@ -1,17 +1,14 @@
 /** @flow */
 import Debug from 'debug'
 
-type Falsy = boolean | null
-type MaybeFn = Function | boolean
+const novariant = (output = false) => (input, ...argv) => output
+  && [input, ...argv]
 
-export const nvrnt = (ns: string, _variant?: Falsy = null, fn?: MaybeFn = false) => {
-  const provider = (typeof fn === 'function' ? fn : Debug)(ns)
-  const isVariantAlready = _variant !== null
+export const nvrnt = (ns: string, _variant: boolean = false, fn: typeof Debug = Debug) => {
+  if (typeof fn !== 'function') throw new TypeError('Wrong output fn')
 
-  return (__variant: string | number, ...argv?: Array<*>): void => {
-    const shouldRun = isVariantAlready ? !_variant : !__variant
-    const args = isVariantAlready ? [__variant, ...argv] : argv
+  const notvariant = novariant(_variant)
+  const write = fn(ns)
 
-    shouldRun && provider(...args)
-  }
+  return (...argv: Array<string | number>) => _variant && write(notvariant(...argv))
 }

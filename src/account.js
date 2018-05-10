@@ -2,14 +2,10 @@
 import { nvrnt } from './utils/invariant'
 import { saveData, isEnv } from './utils/index'
 
-import type
-{
-  RespP, CallableP,
-  AbstractStorage, AccountConfig,
-  SignInOptions, TokenData,
-} from './account.js.flow'
-// $FlowFixMe
-import typeof { Provider } from './provider'
+import type { IdP } from './idp'
+import type { Id, ClientToken, EndpointConfig } from './provider.js.flow'
+import type { IAbstractStorage as AbstractStorage } from './storage.js.flow'
+import type { CallableP, AccountConfig, SignInOptions, TokenData } from './account.js.flow'
 
 const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
@@ -18,21 +14,21 @@ const MY_ACCOUNT_ID = 'me'
 
 const debug = nvrnt('account', isEnv(process.env.NODE_ENV))
 
-export default class Account {
-  provider: Provider;
-  storage: AbstractStorage;
+export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
+  storage: Storage;
+  provider: IdP<EndpointConfig>;
 
   retries: number;
   retryDelay: number;
   leeway: number;
-  myAccountId: string;
+  myAccountId: Id;
   id: string | null;
 
   static get version (): string {
     return __VERSION__
   }
 
-  constructor (config: AccountConfig, storage: AbstractStorage) {
+  constructor (config: Config, storage: Storage) {
     if (!config || !config.provider) throw new TypeError('Missing `provider` in config')
 
     if (!storage) throw new TypeError('Storage is not defined')
@@ -48,9 +44,13 @@ export default class Account {
 
   /**
    * Get token data
+   *
+   * DEPRECATED
    */
   _getTokenData (): TokenData {
     let item
+
+    debug('\'_getTokenData\' is deprecated.')
 
     if (!this.id) {
       debug('Try to get access to account data but no ID was specified')
@@ -102,40 +102,47 @@ export default class Account {
   /**
    * Check token expire
    */
-  _isTokenExpired (): boolean {
-    const tokenData = this._getTokenData()
+  _isTokenExpired (data: TokenData): boolean {
+    const isExpired = x => !x
+    || !x.expires_time
+    || Date.now() > (Number(x.expires_time) - this.leeway)
 
-    return !tokenData || !tokenData.expires_time
-    || Date.now() > (Number(tokenData.expires_time) - this.leeway)
+    return isExpired(data)
+  }
+
+  /**
+   * Does token exist
+   *
+   * @param {string} [key='access_token']
+   * @returns a:?string => a
+   * @memberof Account
+   */
+  _isTokenExist (key: string = 'access_token') { // eslint-disable-line class-methods-use-this
+    return (token: ?string) => {
+      if (!token) throw new TypeError(`Missing '${key}' in account data`)
+
+      return token
+    }
   }
 
   /**
    * Get access token
    */
-  signIn (options: SignInOptions): RespP {
-    const fetchToken = (authKey, params) => {
-      if (this._isTokenExpired() || !this.id) {
-        return this._fetchToken(authKey, params)
-      }
+  signIn (options: SignInOptions): Promise<*> {
+    const fetchToken = (authKey, params) => this._getTokenDataP()
+      .then(data => (this._isTokenExpired(data) || !this.id)
+        ? this._fetchToken(authKey, params)
+        : data)
 
-      return this._getTokenDataP()
-    }
+    const refreshToken = (token: string) => this._getTokenDataP()
+      .then(data => (this._isTokenExpired(data) || !this.id)
+        ? this._fetchRefreshToken(this.myAccountId, token)
+        : data)
 
-    const refreshToken = (token: string) => {
-      if (this._isTokenExpired() || !this.id) {
-        return this._fetchRefreshToken(this.myAccountId, token)
-      }
-
-      return Promise.resolve(this._getTokenData())
-    }
-
-    const getTokenDataById = () => {
-      if (this._isTokenExpired()) {
-        return this._fetchRefreshToken(this.myAccountId, this._getTokenData().refresh_token)
-      }
-
-      return Promise.resolve(this._getTokenData())
-    }
+    const getTokenDataById = () => this._getTokenDataP()
+      .then(tokenData => this._isTokenExpired(tokenData)
+        ? this._fetchRefreshToken(this.myAccountId, tokenData.refresh_token)
+        : tokenData)
 
     if (
       options
@@ -151,7 +158,7 @@ export default class Account {
       return getTokenDataById()
     } else if (options && options.refresh_token) {
       return refreshToken(options.refresh_token)
-    } else if (!options && this.id && this._getTokenData()) {
+    } else if (!options && this.id) {
       return getTokenDataById()
     }
 
@@ -164,12 +171,11 @@ export default class Account {
    */
   refresh (id: string) {
     return () => {
-      const tokenData = this._getTokenData()
-
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.refresh_token) throw new TypeError('Missing \'refresh_token\' in account data')
 
-      return this._fetchRefreshToken(id, tokenData.refresh_token)
+      return this._getTokenDataP()
+        .then(({ refresh_token }) => this._isTokenExist('refresh_token')(refresh_token))
+        .then(token => this._fetchRefreshToken(id, token))
     }
   }
 
@@ -177,15 +183,13 @@ export default class Account {
    * Revoke refresh token
    * @param {*} id
    */
-  revoke (id: string): CallableP<RespP> {
+  revoke (id: string): CallableP<Promise<*>> {
     return () => {
-      const tokenData = this._getTokenData()
-
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.refresh_token) throw new TypeError('Missing \'refresh_token\' in account data')
 
-      return this._fetchRetry(() => this.provider
-        .revokeRefreshTokenRequest(id, tokenData.refresh_token))
+      return this._getTokenDataP()
+        .then(({ refresh_token }) => this._isTokenExist('refresh_token')(refresh_token))
+        .then(token => this._fetchRetry(() => this.provider.revokeRefreshTokenRequest(id, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
         .then((res) => {
@@ -201,16 +205,14 @@ export default class Account {
    * @param {*} authKey
    * @param {*} params
    */
-  link (authKey: string, params: {} = {}): CallableP<RespP> {
+  link (authKey: string, params: ClientToken): CallableP<Promise<*>> {
     return () => {
-      const tokenData = this._getTokenData()
-
       if (!authKey) throw new TypeError(`Incorrect parameters 'authKey': ${authKey}`)
       if (!params) throw new TypeError(`Incorrect parameters 'params': ${params}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing \'access_token\' in account data')
 
-      return this._fetchRetry(() => this.provider
-        .linkRequest(authKey, params, tokenData.access_token))
+      return this._getTokenDataP()
+        .then(({ access_token }) => this._isTokenExist()(access_token))
+        .then(token => this._fetchRetry(() => this.provider.linkRequest(authKey, params, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
     }
@@ -220,14 +222,13 @@ export default class Account {
    * Get linked accounts
    * @param {*} id
    */
-  auth (id: string): CallableP<RespP> {
+  auth (id: string): CallableP<Promise<*>> {
     return () => {
-      const tokenData = this._getTokenData()
-
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing \'access_token\' in account data')
 
-      return this._fetchRetry(() => this.provider.authRequest(id, tokenData.access_token))
+      return this._getTokenDataP()
+        .then(({ access_token }) => this._isTokenExist()(access_token))
+        .then(token => this._fetchRetry(() => this.provider.authRequest(id, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
     }
@@ -238,16 +239,14 @@ export default class Account {
    * @param {*} id
    * @param {*} authKey
    */
-  unlink (id: string, authKey: string): CallableP<RespP> {
+  unlink (id: string, authKey: string): CallableP<Promise<*>> {
     return () => {
-      const tokenData = this._getTokenData()
-
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
       if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing \'access_token\' in account data')
 
-      return this._fetchRetry(() => this.provider
-        .unlinkRequest(id, authKey, tokenData.access_token))
+      return this._getTokenDataP()
+        .then(({ access_token }) => this._isTokenExist()(access_token))
+        .then(token => this._fetchRetry(() => this.provider.unlinkRequest(id, authKey, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
     }
@@ -257,15 +256,13 @@ export default class Account {
    * Get account info
    * @param {*} id
    */
-  get (id: string): CallableP<RespP> {
+  get (id: string): CallableP<Promise<*>> {
     return () => {
-      const tokenData = this._getTokenData()
-
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing \'access_token\' in account data')
 
-      return this._fetchRetry(() => this.provider
-        .accountRequest(id, tokenData.access_token))
+      return this._getTokenDataP()
+        .then(({ access_token }) => this._isTokenExist()(access_token))
+        .then(token => this._fetchRetry(() => this.provider.accountRequest(id, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
     }
@@ -274,15 +271,13 @@ export default class Account {
   /**
    * Remove account
    */
-  remove (id: string): CallableP<RespP> {
+  remove (id: string): CallableP<Promise<*>> {
     return () => {
-      const tokenData = this._getTokenData()
-
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing \'access_token\' in account data')
 
-      return this._fetchRetry(() => this.provider
-        .removeAccountRequest(id, tokenData.access_token))
+      return this._getTokenDataP()
+        .then(({ access_token }) => this._isTokenExist()(access_token))
+        .then(token => this._fetchRetry(() => this.provider.removeAccountRequest(id, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
         .then((res) => {
@@ -297,14 +292,13 @@ export default class Account {
    * Check is account enabled
    * @param {*} id
    */
-  isEnabled (id: string): CallableP<RespP> {
+  isEnabled (id: string): CallableP<Promise<*>> {
     return () => {
-      const tokenData = this._getTokenData()
-
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing \'access_token\' in account data')
 
-      return this._fetchRetry(() => this.provider.isEnabledRequest(id, tokenData.access_token))
+      return this._getTokenDataP()
+        .then(({ access_token }) => this._isTokenExist()(access_token))
+        .then(token => this._fetchRetry(() => this.provider.isEnabledRequest(id, token)))
         .then(this._checkStatus)
     }
   }
@@ -313,14 +307,13 @@ export default class Account {
    * Enable account
    * @param {*} id
    */
-  enable (id: string): CallableP<RespP> {
+  enable (id: string): CallableP<Promise<*>> {
     return () => {
-      const tokenData = this._getTokenData()
-
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing \'access_token\' in account data')
 
-      return this._fetchRetry(() => this.provider.enableRequest(id, tokenData.access_token))
+      return this._getTokenDataP()
+        .then(({ access_token }) => this._isTokenExist()(access_token))
+        .then(token => this._fetchRetry(() => this.provider.enableRequest(id, token)))
         .then(this._checkStatus)
     }
   }
@@ -329,14 +322,13 @@ export default class Account {
    * Disable account
    * @param {*} id
    */
-  disable (id: string): CallableP<RespP> {
+  disable (id: string): CallableP<Promise<*>> {
     return () => {
-      const tokenData = this._getTokenData()
-
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError('Missing \'access_token\' in account data')
 
-      return this._fetchRetry(() => this.provider.disableRequest(id, tokenData.access_token))
+      return this._getTokenDataP()
+        .then(({ access_token }) => this._isTokenExist()(access_token))
+        .then(token => this._fetchRetry(() => this.provider.disableRequest(id, token)))
         .then(this._checkStatus)
     }
   }
@@ -359,26 +351,36 @@ export default class Account {
    * @param {*} data
    */
   _saveTokenData (data: TokenData = {}): void {
-    const tokenData = this._getTokenData()
+    const {
+      access_token, refresh_token, expires_in,
+    } = data
 
-    if (data && data.access_token) {
-      tokenData.access_token = data.access_token
-    }
-    if (data && data.refresh_token) {
-      tokenData.refresh_token = data.refresh_token
-    }
-    if (data && data.expires_in) {
-      tokenData.expires_in = data.expires_in
-      tokenData.expires_time = Date.now() + ((Number(data.expires_in) || 0) * 1000)
-    }
+    this._getTokenDataP()
+      .then((_data) => {
+        const tokenData = _data
 
-    this.storage.setItem(`account_${this.id || ''}`, JSON.stringify(tokenData))
+        if (access_token) tokenData.access_token = access_token
+
+        if (refresh_token) tokenData.refresh_token = refresh_token
+
+        if (expires_in) {
+          tokenData.expires_in = expires_in
+          tokenData.expires_time = Date.now() + ((Number(expires_in) || 0) * 1000)
+        }
+
+        this.storage.setItem(`account_${this.id || ''}`, JSON.stringify(tokenData))
+
+        return true
+      })
+      .catch((error) => {
+        throw new Error(error.message || 'Can\'t save the token data')
+      })
   }
 
   /**
    * Fetch access token
    */
-  _fetchToken (authKey: string, params: {} = {}): RespP {
+  _fetchToken (authKey: string, params: ClientToken): Promise<*> {
     if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
     if (!params) throw new TypeError(`Incorrect parameter 'params': ${params}`)
 
@@ -409,20 +411,9 @@ export default class Account {
   /**
    * Fetch refresh token
    */
-  _fetchRefreshToken (id: string, refreshToken: string = ''): RespP {
+  _fetchRefreshToken (id: string, refreshToken: string = ''): Promise<*> {
     if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
     if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
-
-    // const saveData = (data: TokenData) => {
-    //   if (!data.refresh_token) {
-    //     const newData: TokenData = Object.create(data)
-
-    //     newData.refresh_token = refreshToken
-    //     this._saveTokenData(newData)
-    //   } else {
-    //     this._saveTokenData(data)
-    //   }
-    // }
 
     const fetchAccount = data => this._fetchRetry(() => this.provider
       .accountRequest(this.myAccountId, data.access_token))
@@ -430,7 +421,6 @@ export default class Account {
       .then(this._parseJSON)
       .then((res) => {
         this.id = res.id
-        // saveData(data)
 
         saveData(tokenData => this._saveTokenData(tokenData), data)
 
@@ -443,7 +433,6 @@ export default class Account {
       .then((data) => {
         if (!this.id) return fetchAccount(data)
 
-        // saveData(data)
         saveData(tokenData => this._saveTokenData(tokenData), data)
 
         return data

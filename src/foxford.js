@@ -16,8 +16,8 @@ class FoxfordIAMProvider extends Provider {
     return new Request(`${this.endpoint}/accounts/${id}/refresh`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${refreshToken}`
-      }
+        'Authorization': `Bearer ${refreshToken}`,
+      },
     })
   }
 
@@ -28,10 +28,12 @@ class FoxfordIAMProvider extends Provider {
     return new Request(`${this.endpoint}/accounts/${id}/revoke`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${refreshToken}`
-      }
+        'Authorization': `Bearer ${refreshToken}`,
+      },
     })
   }
 }
+
+export { FoxfordIAMProvider }
 
 export default FoxfordIAMProvider

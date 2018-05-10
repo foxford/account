@@ -12,27 +12,23 @@ module.exports = {
     library: '[name]',
   },
   module: {
-    rules: [{
-      test: /\.js$/,
-      exclude: /(node_modules)/,
-      use: {
-        loader: 'babel-loader',
-        options: {
-          presets: ['env']
-        }
-      }
-    }, {
-      test: /\.js$/,
-      exclude: /node_modules/,
-      use: [
-        'babel-loader',
-        'eslint-loader'
-      ]
-    }]
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /(node_modules|bower_components)/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            cacheDirectory: true,
+            presets: ['env'],
+          },
+        },
+      },
+    ],
   },
   plugins: [
     new webpack.DefinePlugin({
-      __VERSION__: JSON.stringify(version)
-    })
-  ]
+      __VERSION__: JSON.stringify(version),
+    }),
+  ],
 }

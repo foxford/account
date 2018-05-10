@@ -30,4 +30,4 @@ node_modules
 data/
 
 # Types
-/flow-typed
+flow-typed/

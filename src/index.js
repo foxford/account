@@ -1,8 +1,11 @@
-import Account from './account'
-import IdP from './idp'
-import FoxfordIAMProvider from './foxford'
-import { Provider } from './provider'
+import { Account } from './account'
 
-export { IdP, FoxfordIAMProvider, Provider }
+export { FoxfordIAMProvider } from './foxford'
+
+export { Provider } from './provider'
+
+export { IdP } from './idp'
+
+export { Account }
 
 export default Account
