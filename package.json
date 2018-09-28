@@ -1,8 +1,8 @@
 {
   "name": "account",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "dist/account.js",
-  "repository": "https://github.com/foxford/idp-client.git",
+  "repository": "https://github.com/netology-group/account.git",
   "author": "Elay <e.tolchennikov@netology-group.ru>",
   "license": "MIT",
   "scripts": {
