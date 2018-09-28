@@ -76,6 +76,10 @@ class Account {
       options.params.grant_type
     ) {
       return fetchToken(options.auth_key, options.params)
+    } else if (options && options.data) {
+      this._saveTokenData(options.data)
+
+      return getTokenDataById()
     } else if (options && options.refresh_token) {
       return refreshToken(options.refresh_token)
     } else if (!options && this.id && this._getTokenData()) {
@@ -87,7 +91,7 @@ class Account {
 
   /**
    * Refresh access token
-   * @param {*} id 
+   * @param {*} id
    */
   refresh (id) {
     return data => {
@@ -102,7 +106,7 @@ class Account {
 
   /**
    * Revoke refresh token
-   * @param {*} id 
+   * @param {*} id
    */
   revoke (id) {
     return data => {
@@ -125,7 +129,7 @@ class Account {
 
   /**
    * Link client's accounts
-   * @param {*} authKey 
+   * @param {*} authKey
    * @param {*} params
    */
   link (authKey, params) {
@@ -147,7 +151,7 @@ class Account {
 
   /**
    * Get linked accounts
-   * @param {*} id 
+   * @param {*} id
    */
   auth (id) {
     return data => {
@@ -167,8 +171,8 @@ class Account {
 
   /**
    * Delete account link
-   * @param {*} id 
-   * @param {*} authKey 
+   * @param {*} id
+   * @param {*} authKey
    */
   unlink (id, authKey) {
     return data => {
@@ -189,7 +193,7 @@ class Account {
 
   /**
    * Get account info
-   * @param {*} id 
+   * @param {*} id
    */
   get (id) {
     return data => {
@@ -231,7 +235,7 @@ class Account {
 
   /**
    * Check is account enabled
-   * @param {*} id 
+   * @param {*} id
    */
   isEnabled (id) {
     return data => {
@@ -249,7 +253,7 @@ class Account {
 
   /**
    * Enable account
-   * @param {*} id 
+   * @param {*} id
    */
   enable (id) {
     return data => {
@@ -298,7 +302,7 @@ class Account {
 
   /**
    * Save token data
-   * @param {*} data 
+   * @param {*} data
    */
   _saveTokenData (data) {
     if (!this.id) throw new TypeError(`Missing account id: ${this.id}`)
@@ -428,7 +432,7 @@ class Account {
 
   /**
    * Check http status and retrurn response or response with error
-   * @param {*} response 
+   * @param {*} response
    */
   _checkStatus (response) {
     if (!response) throw new TypeError(`Missing 'response': ${response}`)
@@ -445,7 +449,7 @@ class Account {
 
   /**
    * Parse response to JSON
-   * @param {*} response 
+   * @param {*} response
    */
   _parseJSON (response) {
     if (!response) throw new TypeError(`Missing 'response': ${response}`)

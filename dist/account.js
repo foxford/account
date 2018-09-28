@@ -177,7 +177,7 @@ exports.default = Provider;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Provider = exports.IdP = undefined;
+exports.Provider = exports.FoxfordIAMProvider = exports.IdP = undefined;
 
 var _account = __webpack_require__(2);
 
@@ -186,6 +186,10 @@ var _account2 = _interopRequireDefault(_account);
 var _idp = __webpack_require__(3);
 
 var _idp2 = _interopRequireDefault(_idp);
+
+var _foxford = __webpack_require__(4);
+
+var _foxford2 = _interopRequireDefault(_foxford);
 
 var _provider = __webpack_require__(0);
 
@@ -196,6 +200,7 @@ function _interopRequireDefault(obj) {
 }
 
 exports.IdP = _idp2.default;
+exports.FoxfordIAMProvider = _foxford2.default;
 exports.Provider = _provider2.default;
 exports.default = _account2.default;
 
@@ -235,7 +240,7 @@ var Account = function () {
   _createClass(Account, null, [{
     key: 'version',
     get: function get() {
-      return "1.0.0";
+      return "1.1.0";
     }
   }]);
 
@@ -317,6 +322,10 @@ var Account = function () {
 
       if (options && options.auth_key && options.params && options.params.client_token && options.params.grant_type) {
         return fetchToken(options.auth_key, options.params);
+      } else if (options && options.data) {
+        this._saveTokenData(options.data);
+
+        return getTokenDataById();
       } else if (options && options.refresh_token) {
         return refreshToken(options.refresh_token);
       } else if (!options && this.id && this._getTokenData()) {
@@ -328,7 +337,7 @@ var Account = function () {
 
     /**
      * Refresh access token
-     * @param {*} id 
+     * @param {*} id
      */
 
   }, {
@@ -348,7 +357,7 @@ var Account = function () {
 
     /**
      * Revoke refresh token
-     * @param {*} id 
+     * @param {*} id
      */
 
   }, {
@@ -373,7 +382,7 @@ var Account = function () {
 
     /**
      * Link client's accounts
-     * @param {*} authKey 
+     * @param {*} authKey
      * @param {*} params
      */
 
@@ -399,7 +408,7 @@ var Account = function () {
 
     /**
      * Get linked accounts
-     * @param {*} id 
+     * @param {*} id
      */
 
   }, {
@@ -423,8 +432,8 @@ var Account = function () {
 
     /**
      * Delete account link
-     * @param {*} id 
-     * @param {*} authKey 
+     * @param {*} id
+     * @param {*} authKey
      */
 
   }, {
@@ -449,7 +458,7 @@ var Account = function () {
 
     /**
      * Get account info
-     * @param {*} id 
+     * @param {*} id
      */
 
   }, {
@@ -497,7 +506,7 @@ var Account = function () {
 
     /**
      * Check is account enabled
-     * @param {*} id 
+     * @param {*} id
      */
 
   }, {
@@ -519,7 +528,7 @@ var Account = function () {
 
     /**
      * Enable account
-     * @param {*} id 
+     * @param {*} id
      */
 
   }, {
@@ -579,7 +588,7 @@ var Account = function () {
 
     /**
      * Save token data
-     * @param {*} data 
+     * @param {*} data
      */
 
   }, {
@@ -715,7 +724,7 @@ var Account = function () {
 
     /**
      * Check http status and retrurn response or response with error
-     * @param {*} response 
+     * @param {*} response
      */
 
   }, {
@@ -735,7 +744,7 @@ var Account = function () {
 
     /**
      * Parse response to JSON
-     * @param {*} response 
+     * @param {*} response
      */
 
   }, {
@@ -1005,6 +1014,102 @@ var IdP = function (_Provider) {
 }(_provider2.default);
 
 exports.default = IdP;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () {
+  function defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];descriptor.enumerable = descriptor.enumerable || false;descriptor.configurable = true;if ("value" in descriptor) descriptor.writable = true;Object.defineProperty(target, descriptor.key, descriptor);
+    }
+  }return function (Constructor, protoProps, staticProps) {
+    if (protoProps) defineProperties(Constructor.prototype, protoProps);if (staticProps) defineProperties(Constructor, staticProps);return Constructor;
+  };
+}();
+
+var _provider = __webpack_require__(0);
+
+var _provider2 = _interopRequireDefault(_provider);
+
+function _interopRequireDefault(obj) {
+  return obj && obj.__esModule ? obj : { default: obj };
+}
+
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+function _possibleConstructorReturn(self, call) {
+  if (!self) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }return call && ((typeof call === "undefined" ? "undefined" : _typeof(call)) === "object" || typeof call === "function") ? call : self;
+}
+
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function, not " + (typeof superClass === "undefined" ? "undefined" : _typeof(superClass)));
+  }subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } });if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+}
+
+var FoxfordIAMProvider = function (_Provider) {
+  _inherits(FoxfordIAMProvider, _Provider);
+
+  function FoxfordIAMProvider(config) {
+    _classCallCheck(this, FoxfordIAMProvider);
+
+    if (!config && !config.endpoint) throw new TypeError('Missing `endpoint` in config');
+
+    var _this = _possibleConstructorReturn(this, (FoxfordIAMProvider.__proto__ || Object.getPrototypeOf(FoxfordIAMProvider)).call(this));
+
+    _this.endpoint = config.endpoint;
+    return _this;
+  }
+
+  _createClass(FoxfordIAMProvider, [{
+    key: 'refreshAccessTokenRequest',
+    value: function refreshAccessTokenRequest(id, refreshToken) {
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!refreshToken) throw new TypeError('Incorrect parameter \'refreshToken\': ' + refreshToken);
+
+      return new Request(this.endpoint + '/accounts/' + id + '/refresh', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + refreshToken
+        }
+      });
+    }
+  }, {
+    key: 'revokeRefreshTokenRequest',
+    value: function revokeRefreshTokenRequest(id, refreshToken) {
+      if (!id) throw new TypeError('Incorrect parameter \'id\': ' + id);
+      if (!refreshToken) throw new TypeError('Incorrect parameter \'refreshToken\': ' + refreshToken);
+
+      return new Request(this.endpoint + '/accounts/' + id + '/revoke', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + refreshToken
+        }
+      });
+    }
+  }]);
+
+  return FoxfordIAMProvider;
+}(_provider2.default);
+
+exports.default = FoxfordIAMProvider;
 
 /***/ })
 /******/ ]);
