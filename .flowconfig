@@ -1,13 +1,16 @@
 [ignore]
 
 [include]
+./src
 
 [libs]
-flow
 
 [lints]
 
 [options]
+emoji=true
 include_warnings=true
+module.use_strict=true
+experimental.const_params=true
 
 [strict]

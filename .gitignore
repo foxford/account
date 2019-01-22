@@ -118,8 +118,5 @@ data/
 /out
 /build
 
-# Types
-flow-typed/
-
 # Bundle
 dist/

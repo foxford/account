@@ -1,18 +1,23 @@
 {
   "extends": ["adequate", "plugin:flowtype/recommended"],
-  "plugins": ["flowtype", "flowtype-errors"],
+  "plugins": ["flowtype"],
   "parser": "babel-eslint",
   "parserOptions": {
-    "ecmaVersion": 6,
+    "ecmaVersion": 2018,
     "sourceType": "module"
   },
-  "env":{
+  "globals": {
+    "__VERSION__": true
+  },
+  "env": {
     "mocha": true
   },
-  "globals": {
-    "window": true,
-    "__VERSION__": true,
-    "setTimeout": true,
-    "process": true
+  "rules": {
+    "node/no-unsupported-features/es-syntax": 0
+  },
+  "settings": {
+    "flowtype": {
+      "onlyFilesWithFlowAnnotation": true
+    }
   }
 }

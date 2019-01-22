@@ -16,12 +16,17 @@ const debug = nvrnt('account', isEnv(process.env.NODE_ENV))
 
 export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   storage: Storage;
+
   provider: IdP<EndpointConfig>;
 
   retries: number;
+
   retryDelay: number;
+
   leeway: number;
+
   myAccountId: Id;
+
   id: string | null;
 
   static get version (): string {
@@ -152,13 +157,13 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       && options.params.grant_type
     ) {
       return fetchToken(options.auth_key, options.params)
-    } else if (options && options.data) {
+    } if (options && options.data) {
       this._saveTokenData(options.data)
 
       return getTokenDataById()
-    } else if (options && options.refresh_token) {
+    } if (options && options.refresh_token) {
       return refreshToken(options.refresh_token)
-    } else if (!options && this.id) {
+    } if (!options && this.id) {
       return getTokenDataById()
     }
 

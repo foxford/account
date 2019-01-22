@@ -45,4 +45,4 @@ class Provider {
   }
 }
 
-export default Provider
+export { Provider }
