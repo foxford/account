@@ -1,8 +1,0 @@
-/** @flow */
-declare var __VERSION__: string
-
-declare var process: {
-  env: {
-    'NODE_ENV': string
-  }
-}

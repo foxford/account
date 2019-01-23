@@ -1,18 +1,22 @@
 /** @flow */
-import { nvrnt } from './utils/invariant'
-import { saveData, isEnv } from './utils/index'
+// import { nvrnt } from './utils/invariant'
+// import { saveData, isEnv } from './utils/index'
+import { saveData } from './utils/index'
 
 import type { IdP } from './idp'
-import type { Id, ClientToken, EndpointConfig } from './provider.js.flow'
+import type { Id, ClientToken } from './identity-provider.js.flow'
 import type { IAbstractStorage as AbstractStorage } from './storage.js.flow'
 import type { CallableP, AccountConfig, SignInOptions, TokenData } from './account.js.flow'
+
+type EndpointConfig = { endpoint: string }
 
 const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
 const LEEWAY = 3000
 const MY_ACCOUNT_ID = 'me'
 
-const debug = nvrnt('account', isEnv(process.env.NODE_ENV))
+// const debug = nvrnt('account', isEnv(process.env.NODE_ENV))
+const debug = x => x
 
 export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   storage: Storage;
@@ -28,10 +32,6 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   myAccountId: Id;
 
   id: string | null;
-
-  static get version (): string {
-    return __VERSION__
-  }
 
   constructor (config: Config, storage: Storage) {
     if (!config || !config.provider) throw new TypeError('Missing `provider` in config')
@@ -134,7 +134,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
    * Get access token
    */
   signIn (options: SignInOptions): Promise<*> {
-    const fetchToken = (authKey, params) => this._getTokenDataP()
+    const fetchToken = (authKey, params: ClientToken) => this._getTokenDataP()
       .then(data => (this._isTokenExpired(data) || !this.id)
         ? this._fetchToken(authKey, params)
         : data)
@@ -174,7 +174,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
    * Refresh access token
    * @param {*} id
    */
-  refresh (id: string) {
+  refresh (id: string): () => Promise<*> {
     return () => {
       if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
 
@@ -206,58 +206,6 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   /**
-   * Link client's accounts
-   * @param {*} authKey
-   * @param {*} params
-   */
-  link (authKey: string, params: ClientToken): CallableP<Promise<*>> {
-    return () => {
-      if (!authKey) throw new TypeError(`Incorrect parameters 'authKey': ${authKey}`)
-      if (!params) throw new TypeError(`Incorrect parameters 'params': ${params}`)
-
-      return this._getTokenDataP()
-        .then(({ access_token }) => this._isTokenExist()(access_token))
-        .then(token => this._fetchRetry(() => this.provider.linkRequest(authKey, params, token)))
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-    }
-  }
-
-  /**
-   * Get linked accounts
-   * @param {*} id
-   */
-  auth (id: string): CallableP<Promise<*>> {
-    return () => {
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-
-      return this._getTokenDataP()
-        .then(({ access_token }) => this._isTokenExist()(access_token))
-        .then(token => this._fetchRetry(() => this.provider.authRequest(id, token)))
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-    }
-  }
-
-  /**
-   * Delete account link
-   * @param {*} id
-   * @param {*} authKey
-   */
-  unlink (id: string, authKey: string): CallableP<Promise<*>> {
-    return () => {
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
-
-      return this._getTokenDataP()
-        .then(({ access_token }) => this._isTokenExist()(access_token))
-        .then(token => this._fetchRetry(() => this.provider.unlinkRequest(id, authKey, token)))
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-    }
-  }
-
-  /**
    * Get account info
    * @param {*} id
    */
@@ -270,71 +218,6 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
         .then(token => this._fetchRetry(() => this.provider.accountRequest(id, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
-    }
-  }
-
-  /**
-   * Remove account
-   */
-  remove (id: string): CallableP<Promise<*>> {
-    return () => {
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-
-      return this._getTokenDataP()
-        .then(({ access_token }) => this._isTokenExist()(access_token))
-        .then(token => this._fetchRetry(() => this.provider.removeAccountRequest(id, token)))
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-        .then((res) => {
-          this.signOut()
-
-          return res
-        })
-    }
-  }
-
-  /**
-   * Check is account enabled
-   * @param {*} id
-   */
-  isEnabled (id: string): CallableP<Promise<*>> {
-    return () => {
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-
-      return this._getTokenDataP()
-        .then(({ access_token }) => this._isTokenExist()(access_token))
-        .then(token => this._fetchRetry(() => this.provider.isEnabledRequest(id, token)))
-        .then(this._checkStatus)
-    }
-  }
-
-  /**
-   * Enable account
-   * @param {*} id
-   */
-  enable (id: string): CallableP<Promise<*>> {
-    return () => {
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-
-      return this._getTokenDataP()
-        .then(({ access_token }) => this._isTokenExist()(access_token))
-        .then(token => this._fetchRetry(() => this.provider.enableRequest(id, token)))
-        .then(this._checkStatus)
-    }
-  }
-
-  /**
-   * Disable account
-   * @param {*} id
-   */
-  disable (id: string): CallableP<Promise<*>> {
-    return () => {
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-
-      return this._getTokenDataP()
-        .then(({ access_token }) => this._isTokenExist()(access_token))
-        .then(token => this._fetchRetry(() => this.provider.disableRequest(id, token)))
-        .then(this._checkStatus)
     }
   }
 
@@ -448,7 +331,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
    * Fetch with retry logic
    * @param {*} requestFn
    */
-  _fetchRetry (requestFn: () => Request): Promise<Response> {
+  _fetchRetry (requestFn: Function): Promise<Response> {
     if (!requestFn) throw new TypeError(`Missing 'requestFn': ${requestFn}`)
 
     return new Promise((resolve, reject) => {
@@ -463,7 +346,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
             .catch((error) => {
               errors.push(error)
               setTimeout(() => {
-                wrappedFetch(--n) // eslint-disable-line no-param-reassign
+                wrappedFetch(n - 1) // eslint-disable-line no-param-reassign
               }, this.retryDelay)
             })
         }

@@ -26,11 +26,16 @@
   },
   "scripts": {
     "build": "cross-env NODE_ENV=production webpack -p",
+    "precoverage": "rm -rf .nyc_output coverage && mkdir -p coverage",
+    "coverage": "npm run nodetap -- --nyc-arg=--require=./test/babel-register.js --cov",
+    "postcoverage": "tap --coverage-report=text-lcov > coverage/coverage.lcov && codecov",
     "flow": "flow check",
     "lint": "eslint src",
     "mocha": "mocha --recursive \"test/**/*.test.js\"",
+    "nodetap": "npm run tap -- test/**/*.test.js",
     "prepublishOnly": "npm run build",
     "start": "npm run test && npm run build",
+    "tap": "cross-env BABEL_ENV=cjs tap --node-arg=--require=./test/babel-register.js",
     "test": "npm run lint && npm run mocha && npm run flow"
   },
   "dependencies": {
@@ -56,11 +61,14 @@
     "mocha": "^5.2.0",
     "pino": "^4.10.3",
     "rimraf": "^2.6.2",
-    "webpack": "^3.11.0"
+    "tap": "^12.1.2",
+    "webpack": "^3.11.0",
+    "whatwg-fetch": "^3.0.0"
   },
   "optionalDependencies": {
     "@babel/core": "^7.2.2",
     "acorn": "^6.0.5",
+    "codecov": "^3.1.0",
     "cross-env": "^5.2.0",
     "estraverse": "^4.2.0"
   }

@@ -14,3 +14,9 @@ module.use_strict=true
 experimental.const_params=true
 
 [strict]
+nonstrict-import
+sketchy-null
+unclear-type
+unsafe-getters-setters
+untyped-import
+untyped-type-import

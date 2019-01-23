@@ -1,42 +1,42 @@
-import assert from 'assert'
+import tap from 'tap'
 
 import { saveData } from '../../src/utils'
 
 const ACC_TOKEN = 'access_token'
 const REF_TOKEN = 'refresh_token'
 
-describe('Utilities', () => {
-  describe('saveData', () => {
-    it('enhance data with token', (done) => {
-      const untokenedData = {
-        [ACC_TOKEN]: 'token',
-      }
+tap.test('`saveData` utility', (t) => {
+  t.test('enhance data with token', (test) => {
+    const untokenedData = {
+      [ACC_TOKEN]: 'token',
+    }
 
-      saveData((data) => {
-        const expectData = { [ACC_TOKEN]: 'token', [REF_TOKEN]: 'newtoken' }
+    saveData((data) => {
+      const expectData = { [ACC_TOKEN]: 'token', [REF_TOKEN]: 'newtoken' }
 
-        assert.equal(data === expectData, false)
-        assert.deepEqual(data, expectData)
-      }, untokenedData, 'newtoken')
+      tap.equal(data === expectData, false)
+      tap.deepEqual(data, expectData)
+    }, untokenedData, 'newtoken')
 
-      saveData((data) => {
-        const expectData = { [ACC_TOKEN]: 'token', [REF_TOKEN]: '' }
+    saveData((data) => {
+      const expectData = { [ACC_TOKEN]: 'token', [REF_TOKEN]: '' }
 
-        assert.equal(data === expectData, false)
-        assert.deepEqual(data, expectData)
-      }, untokenedData)
+      tap.equal(data === expectData, false)
+      tap.deepEqual(data, expectData)
+    }, untokenedData)
 
-      saveData((data) => {
-        const expectData = { [ACC_TOKEN]: 'token', [REF_TOKEN]: 'token' }
+    saveData((data) => {
+      const expectData = { [ACC_TOKEN]: 'token', [REF_TOKEN]: 'token' }
 
-        assert.equal(data === expectData, false)
-        assert.deepEqual(data, expectData)
-      }, {
-        [ACC_TOKEN]: 'token',
-        [REF_TOKEN]: 'token',
-      })
-
-      done()
+      tap.equal(data === expectData, false)
+      tap.deepEqual(data, expectData)
+    }, {
+      [ACC_TOKEN]: 'token',
+      [REF_TOKEN]: 'token',
     })
+
+    test.end()
   })
+
+  t.end()
 })

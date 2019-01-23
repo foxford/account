@@ -1,6 +1,12 @@
 /** @flow */
 import type { IdP } from './idp'
-import type { Id, ClientToken, EndpointConfig } from './provider.js.flow'
+import type { ClientToken } from './identity-provider.js.flow'
+
+type Id = string
+
+type EndpointConfig = {
+  endpoint: string
+}
 
 type RefreshableData = {
   refresh_token?: string,
@@ -29,4 +35,5 @@ export type SignInOptions = {
   auth_key: string,
   params: ClientToken,
   refresh_token: ?string,
+  data?: TokenData
 }

@@ -1,5 +1,5 @@
-// flow-typed signature: 161f4f97b2eed46612f3dbc0f194ff1d
-// flow-typed version: 3d0a9ee4ea/pino_v4.x.x/flow_>=v0.57.0
+// flow-typed signature: 44b3a20fa3252dd60fa0a567ab1f2197
+// flow-typed version: 45acb9a3f7/pino_v4.x.x/flow_>=v0.57.0
 
 // @flow
 
@@ -169,5 +169,5 @@ declare module "pino" {
       | stream$Transform
   ): Logger;
 
-  declare module.exports: P;
+  declare module.exports: typeof P;
 }

@@ -1,7 +1,15 @@
 /** @flow */
-import type { AccountProvider, Id, Key, Token, ClientToken, EndpointConfig } from './provider.js.flow'
+import type {
+  AccountProvider,
+  ClientToken,
+  Request,
+  Token,
+  Id,
+} from './identity-provider.js.flow'
 
-export default class IdP<Config: EndpointConfig> implements AccountProvider {
+type EndpointConfig = { endpoint: string }
+
+export class IdP<Config: EndpointConfig> implements AccountProvider {
   endpoint: string;
 
   constructor (config: Config) {
@@ -10,14 +18,15 @@ export default class IdP<Config: EndpointConfig> implements AccountProvider {
     this.endpoint = config.endpoint
   }
 
-  accessTokenRequest (authKey: Key, { client_token, grant_type }: ClientToken) {
+  accessTokenRequest (authKey: string, token: ClientToken): Request {
+    const { client_token, grant_type } = token
     if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
     if (!client_token) throw new TypeError(`Incorrect parameters 'client_token': ${client_token}`)
     if (!grant_type) throw new TypeError(`Incorrect parameters 'grant_type': ${grant_type}`)
 
     const uri = `${this.endpoint}/auth/${authKey}/token`
 
-    return new Request(uri, {
+    return new window.Request(uri, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,7 +44,7 @@ export default class IdP<Config: EndpointConfig> implements AccountProvider {
 
     const uri = `${this.endpoint}/accounts/${id}/refresh`
 
-    return new Request(uri, {
+    return new window.Request(uri, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${refreshToken}`,
@@ -49,64 +58,10 @@ export default class IdP<Config: EndpointConfig> implements AccountProvider {
 
     const uri = `${this.endpoint}/accounts/${id}/revoke`
 
-    return new Request(uri, {
+    return new window.Request(uri, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${refreshToken}`,
-      },
-    })
-  }
-
-  linkRequest (
-    authKey: Key,
-    { client_token, grant_type }: ClientToken,
-    accessToken: Token
-  ) {
-    if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
-    if (!client_token) throw new TypeError(`Incorrect parameters 'client_token': ${client_token}`)
-    if (!grant_type) throw new TypeError(`Incorrect parameters 'grant_type': ${grant_type}`)
-    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
-
-    const uri = `${this.endpoint}/auth/${authKey}/link`
-
-    return new Request(uri, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        client_token,
-        grant_type,
-      }),
-    })
-  }
-
-  authRequest (id: Id, accessToken: Token) {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
-
-    const uri = `${this.endpoint}/accounts/${id}/auth`
-
-    return new Request(uri, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    })
-  }
-
-  unlinkRequest (id: Id, authKey: Key, accessToken: Token) {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-    if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
-    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
-
-    const uri = `${this.endpoint}/accounts/${id}/auth/${authKey}`
-
-    return new Request(uri, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
       },
     })
   }
@@ -117,69 +72,11 @@ export default class IdP<Config: EndpointConfig> implements AccountProvider {
 
     const uri = `${this.endpoint}/accounts/${id}`
 
-    return new Request(uri, {
+    return new window.Request(uri, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    })
-  }
-
-  removeAccountRequest (id: Id, accessToken: Token) {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
-
-    const uri = `${this.endpoint}/accounts/${id}`
-
-    return new Request(uri, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    })
-  }
-
-  isEnabledRequest (id: Id, accessToken: Token) {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
-
-    const uri = `${this.endpoint}/accounts/${id}/enabled`
-
-    return new Request(uri, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    })
-  }
-
-  enableRequest (id: Id, accessToken: Token) {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
-
-    const uri = `${this.endpoint}/accounts/${id}/enabled`
-
-    return new Request(uri, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    })
-  }
-
-  disableRequest (id: Id, accessToken: Token) {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-    if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
-
-    const uri = `${this.endpoint}/accounts/${id}/enabled`
-
-    return new Request(uri, {
-      method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
     })
   }
 }
-
-export { IdP }

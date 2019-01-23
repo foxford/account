@@ -1,0 +1,22 @@
+/** @flow strict-local */
+import type { Request } from 'whatwg-fetch/fetch.js.flow'
+
+type Key = string;
+
+export type Id = string;
+
+export type Token = string;
+
+export type ClientToken = {
+  grant_type: string,
+  client_token: Token
+};
+
+export interface AccountProvider {
+  accessTokenRequest(a: Key, b: ClientToken): Request;
+  refreshAccessTokenRequest(a: Id, b: Token): Request;
+  revokeRefreshTokenRequest(a: Id, b: Token): Request;
+  accountRequest(a: Id, b: Token): Request;
+}
+
+export type { Request }
