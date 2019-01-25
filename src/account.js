@@ -1,6 +1,4 @@
 /** @flow */
-// import { nvrnt } from './utils/invariant'
-// import { saveData, isEnv } from './utils/index'
 import { saveData } from './utils/index'
 
 import type { IdP } from './idp'
@@ -18,7 +16,6 @@ const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
 const LEEWAY = 3000
 
-// const debug = nvrnt('account', isEnv(process.env.NODE_ENV))
 const debug = x => x
 
 export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
@@ -334,7 +331,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
             .catch((error) => {
               errors.push(error)
               setTimeout(() => {
-                wrappedFetch(n - 1) // eslint-disable-line no-param-reassign
+                wrappedFetch(n - 1)
               }, this.retryDelay)
             })
         }
