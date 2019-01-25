@@ -5,7 +5,9 @@ import type { ClientToken } from './identity-provider.js.flow'
 type Id = string
 
 type EndpointConfig = {
-  endpoint: string
+  endpoint: string,
+  accountEndpoint?: string | Function,
+  authnEndpoint?: string | Function
 }
 
 type RefreshableData = {

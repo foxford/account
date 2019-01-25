@@ -1,5 +1,4 @@
 /** @flow strict-local */
-import type { Request } from 'whatwg-fetch/fetch.js.flow'
 
 type Key = string;
 
@@ -18,5 +17,3 @@ export interface AccountProvider {
   revokeRefreshTokenRequest(a: Id, b: Token): Request;
   accountRequest(a: Id, b: Token): Request;
 }
-
-export type { Request }

@@ -8,7 +8,11 @@ import type { Id, ClientToken } from './identity-provider.js.flow'
 import type { IAbstractStorage as AbstractStorage } from './storage.js.flow'
 import type { CallableP, AccountConfig, SignInOptions, TokenData } from './account.js.flow'
 
-type EndpointConfig = { endpoint: string }
+type EndpointConfig = {
+  endpoint: string,
+  accountEndpoint?: string | Function,
+  authnEndpoint?: string | Function
+}
 
 const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
@@ -363,7 +367,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   // eslint-disable-next-line class-methods-use-this
   _checkStatus (response: Response): Promise<Response> {
     return new Promise((resolve, reject) => {
-      if (!response) return reject(new TypeError(`Missing 'response': ${response}`))
+      if (!response) return reject(new TypeError(`Missing the 'response': ${response}`))
 
       if (response.status && response.status >= 200 && response.status < 300) {
         return resolve(response)

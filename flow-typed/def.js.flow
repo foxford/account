@@ -1,0 +1,5 @@
+/** @flow strict-local */
+
+import type { Request } from 'whatwg-fetch/fetch.js.flow'
+
+declare var TRequest: Request;
