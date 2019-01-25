@@ -63,37 +63,6 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     }
   }
 
-  /**
-   * Get token data
-   *
-   * DEPRECATED
-   */
-  _getTokenData (): TokenData {
-    let item
-
-    debug('\'_getTokenData\' is deprecated.')
-
-    if (!this.id) {
-      debug('Try to get access to account data but no ID was specified')
-
-      return {}
-    }
-
-    try {
-      item = this.storage.getItem(`account_${this.id}`)
-    } catch (error) { throw new Error(`Missing account id: ${this.id || ''}`) }
-
-    if (!item && typeof item !== 'string') {
-      debug('There is and error while parsing token data')
-
-      return {}
-    }
-
-    try {
-      return JSON.parse(item) || {}
-    } catch (error) { throw new Error('Error occured when parse from account data') }
-  }
-
   _getTokenDataP (): Promise<TokenData> {
     return new Promise((resolve, reject) => {
       let item
