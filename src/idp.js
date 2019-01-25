@@ -3,7 +3,7 @@ import type {
   AccountProvider,
   ClientToken,
   Token,
-  Id,
+  Label,
 } from './identity-provider.js.flow'
 
 type EndpointConfig = {
@@ -63,11 +63,11 @@ export class IdP<Config: EndpointConfig> implements AccountProvider {
     })
   }
 
-  refreshAccessTokenRequest (id: Id, refreshToken: Token): TRequest {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+  refreshAccessTokenRequest (label: Label, refreshToken: Token): TRequest {
+    if (!label) throw new TypeError('Incorrect parameter `label`')
     if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
-    const uri = `${this.accountEndpoint}/${id}/refresh`
+    const uri = `${this.accountEndpoint}/${label}/refresh`
 
     return new Request(uri, {
       method: 'POST',
@@ -77,11 +77,11 @@ export class IdP<Config: EndpointConfig> implements AccountProvider {
     })
   }
 
-  revokeRefreshTokenRequest (id: Id, refreshToken: Token): TRequest {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+  revokeRefreshTokenRequest (label: Label, refreshToken: Token): TRequest {
+    if (!label) throw new TypeError('Incorrect parameter `label`')
     if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
-    const uri = `${this.accountEndpoint}/${id}/revoke`
+    const uri = `${this.accountEndpoint}/${label}/revoke`
 
     return new Request(uri, {
       method: 'POST',
@@ -91,11 +91,11 @@ export class IdP<Config: EndpointConfig> implements AccountProvider {
     })
   }
 
-  accountRequest (id: Id, accessToken: Token): TRequest {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+  accountRequest (label: Label, accessToken: Token): TRequest {
+    if (!label) throw new TypeError('Incorrect parameter `label`')
     if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
-    const uri = `${this.accountEndpoint}/${id}`
+    const uri = `${this.accountEndpoint}/${label}`
 
     return new Request(uri, {
       method: 'GET',

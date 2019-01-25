@@ -11,7 +11,8 @@ import { name } from '../../package.json'
 import {
   signInResponse,
   signInRefreshToken,
-  myAccountId,
+  label,
+  audience,
   accountResponse,
   refreshResponse,
   revokeResponse,
@@ -53,7 +54,9 @@ const getAccount = (opts = {}, store) => {
 
   return new Account({
     provider: new IdP(opts.provider || { endpoint: 'https://mock-host' }),
-    ...(opts.account || {}),
+    ...(opts.account || {
+      audience
+    }),
   }, store || storage)
 }
 
@@ -66,7 +69,7 @@ const params = {
 const fetchMocks = ({
   account,
   authKey: key,
-  myAccountId: id,
+  label: id,
   id: someid,
   action: action = 'refresh',
   response = refreshResponse,
@@ -101,7 +104,7 @@ const fetchMocksOnRevoke = _ => fetchMocks(Object.assign({}, _, {
 const fetchMocksOnGet = ({
   account,
   authKey: key,
-  myAccountId: id,
+  label: id,
   response,
 }) => {
   fetchMock.mock(`${account.provider.endpoint}/auth/${key}/token`, {
@@ -119,7 +122,7 @@ const fetchMocksOnGet = ({
 const fetchMocksOnSignIn = ({
   account,
   authKey: key,
-  myAccountId: id,
+  label: id,
   response,
 }) => {
   fetchMock.mock(`${account.provider.endpoint}/auth/${key}/token`, {
@@ -253,7 +256,7 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocks({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     const negativeValues = [
@@ -283,7 +286,7 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocks({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     account.signIn({ auth_key: authKey, params })
@@ -302,7 +305,7 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocks({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     // sign in at first
@@ -331,7 +334,7 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocks({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     storage.removeItem(`account_${signInId}`)
@@ -350,12 +353,12 @@ tap.test('Account', (t) => {
   t.test('`signIn` returns token data from localStorage', (test) => {
     const account = getAccount({
       account: {
-        id: signInId,
+        audience
       },
     })
 
     fetchMocks({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     // sign in at first
@@ -384,7 +387,7 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocksOnRefresh({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     const negativeValues = [undefined, null, '']
@@ -408,11 +411,11 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocksOnRefresh({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     account.signIn({ auth_key: authKey, params })
-      .then(account.refresh(myAccountId))
+      .then(account.refresh(label))
       .then((res) => {
         tap.strictSame(JSON.stringify(res), JSON.stringify(refreshResponse))
 
@@ -427,11 +430,11 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocksOnRefresh({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     account.signIn({ auth_key: authKey, params })
-      .then(account.refresh(myAccountId))
+      .then(account.refresh(label))
       .then(() => {
         const accessToken = JSON.parse(storage.getItem(`account_${signInId}`)).access_token
 
@@ -448,7 +451,7 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocksOnRevoke({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     const negativeValues = [undefined, null, '']
@@ -468,11 +471,11 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocksOnRevoke({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     account.signIn({ auth_key: authKey, params })
-      .then(account.revoke(myAccountId))
+      .then(account.revoke(label))
       .then((res) => {
         tap.strictSame(JSON.stringify(res), JSON.stringify(revokeResponse))
 
@@ -487,11 +490,11 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocksOnRevoke({
-      account, authKey, myAccountId, id: myAccountId,
+      account, authKey, label, id: label,
     })
 
     account.signIn({ auth_key: authKey, params })
-      .then(account.revoke(myAccountId))
+      .then(account.revoke(label))
       .then(() => {
         const refreshToken = JSON.parse(storage.getItem(`account_${signInId}`)).refresh_token
 
@@ -508,7 +511,7 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocksOnGet({
-      account, authKey, myAccountId, response: accountResponse,
+      account, authKey, label, response: accountResponse,
     })
 
     const negativeValues = [undefined, null, '']
@@ -532,7 +535,7 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocksOnGet({
-      account, authKey, myAccountId, response: accountResponse,
+      account, authKey, label, response: accountResponse,
     })
 
     let responseId = null
@@ -541,7 +544,7 @@ tap.test('Account', (t) => {
       .then((res) => {
         responseId = res.id
 
-        return account.get(myAccountId)
+        return account.get(label)
       })
       .then((res) => {
         tap.strictSame(res.id, responseId)
@@ -557,11 +560,11 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocksOnGet({
-      account, authKey, myAccountId, response: accountResponse,
+      account, authKey, label, response: accountResponse,
     })
 
     account.signIn({ auth_key: authKey, params })
-      .then(account.get(myAccountId))
+      .then(account.get(label))
       .then((res) => {
         tap.strictSame(res.id, signInId)
 
@@ -576,7 +579,7 @@ tap.test('Account', (t) => {
     const account = getAccount()
 
     fetchMocksOnSignIn({
-      account, authKey, myAccountId, response: accountResponse,
+      account, authKey, label, response: accountResponse,
     })
 
     account.signIn({ auth_key: authKey, params })
@@ -615,7 +618,8 @@ tap.test('Account._getTokenData', (t) => {
   t.test('Fetched data with ID but empty', (test) => {
     const account = getAccount({
       account: {
-        id: 'account_id_value',
+        label: 'account_id_value',
+        audience,
       },
     })
 
@@ -636,10 +640,10 @@ tap.test('Account._getTokenData', (t) => {
     const store = storageMock()
 
     const account = getAccount({
-      account: { id: 'me' },
+      account: { label: 'me', audience },
     }, store)
 
-    store.setItem('account_me', { a: 123 })
+    store.setItem(`account_${signInId}`, { a: 123 })
 
     Promise.resolve()
       .then(() => account._getTokenData())
@@ -653,10 +657,10 @@ tap.test('Account._getTokenData', (t) => {
     const store = storageMock()
 
     const account = getAccount({
-      account: { id: 'me' },
+      account: { label: 'me', audience },
     }, store)
 
-    store.setItem('account_me', JSON.stringify({ data: 123 }))
+    store.setItem(`account_${signInId}`, JSON.stringify({ data: 123 }))
 
     Promise.resolve()
       .then(() => account._getTokenData())
@@ -689,7 +693,7 @@ tap.test('Account._getTokenDataP', (t) => {
 
   t.test('Fetched data with ID but empty', (test) => {
     const account = getAccount({
-      account: { id: 'me' },
+      account: { label: 'me', audience },
     })
 
     account._getTokenDataP()
@@ -708,10 +712,10 @@ tap.test('Account._getTokenDataP', (t) => {
     const store = storageMock()
 
     const account = getAccount({
-      account: { id: 'me' },
+      account: { label: 'me', audience },
     }, store)
 
-    store.setItem('account_me', { a: 123 })
+    store.setItem(`account_${signInId}`, { a: 123 })
 
     account._getTokenDataP()
       .catch((error) => {
@@ -724,10 +728,10 @@ tap.test('Account._getTokenDataP', (t) => {
     const store = storageMock()
 
     const account = getAccount({
-      account: { id: 'me' },
+      account: { label: 'me', audience },
     }, store)
 
-    store.setItem('account_me', JSON.stringify({ data: 123 }))
+    store.setItem(`account_${signInId}`, JSON.stringify({ data: 123 }))
 
     account._getTokenDataP()
       .then(({ data }) => {

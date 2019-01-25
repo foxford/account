@@ -25,9 +25,10 @@ export type TokenData = UnrefreshableData & RefreshableData
 export type CallableP<T> = () => T
 
 export type AccountConfig = {
-  id: string | null,
+  label: string,
   leeway: number,
   myAccountId: Id,
+  audience: string,
   provider: IdP<EndpointConfig>,
   retries: number,
   retryDelay: number,

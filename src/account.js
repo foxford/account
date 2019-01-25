@@ -4,7 +4,7 @@
 import { saveData } from './utils/index'
 
 import type { IdP } from './idp'
-import type { Id, ClientToken } from './identity-provider.js.flow'
+import type { Label, ClientToken } from './identity-provider.js.flow'
 import type { IAbstractStorage as AbstractStorage } from './storage.js.flow'
 import type { CallableP, AccountConfig, SignInOptions, TokenData } from './account.js.flow'
 
@@ -17,7 +17,6 @@ type EndpointConfig = {
 const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
 const LEEWAY = 3000
-const MY_ACCOUNT_ID = 'me'
 
 // const debug = nvrnt('account', isEnv(process.env.NODE_ENV))
 const debug = x => x
@@ -33,7 +32,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
   leeway: number;
 
-  myAccountId: Id;
+  label: string;
 
   id: string | null;
 
@@ -47,8 +46,21 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     this.retries = config.retries || MAX_AJAX_RETRY
     this.retryDelay = config.retryDelay || AJAX_RETRY_DELAY
     this.leeway = config.leeway || LEEWAY
-    this.myAccountId = config.myAccountId || MY_ACCOUNT_ID
-    this.id = config.id || null
+
+    const { id, label } = this._createLabel(config.audience, config.label)
+
+    this.label = label
+    this.id = id
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  _createLabel (audience: string, label: string = 'me', separator: string = '.'): { label: string, id: string } {
+    if (!audience) throw new TypeError('`audience` is absent')
+
+    return {
+      label,
+      id: `${label}${separator}${audience}`,
+    }
   }
 
   /**
@@ -145,12 +157,12 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
     const refreshToken = (token: string) => this._getTokenDataP()
       .then(data => (this._isTokenExpired(data) || !this.id)
-        ? this._fetchRefreshToken(this.myAccountId, token)
+        ? this._fetchRefreshToken(this.label, token)
         : data)
 
     const getTokenDataById = () => this._getTokenDataP()
       .then(tokenData => this._isTokenExpired(tokenData)
-        ? this._fetchRefreshToken(this.myAccountId, tokenData.refresh_token)
+        ? this._fetchRefreshToken(this.label, tokenData.refresh_token)
         : tokenData)
 
     if (
@@ -192,13 +204,14 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
    * Revoke refresh token
    * @param {*} id
    */
-  revoke (id: string): CallableP<Promise<*>> {
+  revoke (label: Label): CallableP<Promise<*>> {
     return () => {
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+      if (!label) throw new TypeError('Incorrect parameter `label`')
 
       return this._getTokenDataP()
         .then(({ refresh_token }) => this._isTokenExist('refresh_token')(refresh_token))
-        .then(token => this._fetchRetry(() => this.provider.revokeRefreshTokenRequest(id, token)))
+        .then(token => this
+          ._fetchRetry(() => this.provider.revokeRefreshTokenRequest(label, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
         .then((res) => {
@@ -213,13 +226,13 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
    * Get account info
    * @param {*} id
    */
-  get (id: string): CallableP<Promise<*>> {
+  get (label: Label): CallableP<Promise<*>> {
     return () => {
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+      if (!label) throw new TypeError('Incorrect parameter `label`')
 
       return this._getTokenDataP()
         .then(({ access_token }) => this._isTokenExist()(access_token))
-        .then(token => this._fetchRetry(() => this.provider.accountRequest(id, token)))
+        .then(token => this._fetchRetry(() => this.provider.accountRequest(label, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
     }
@@ -260,7 +273,9 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
           tokenData.expires_time = Date.now() + ((Number(expires_in) || 0) * 1000)
         }
 
-        this.storage.setItem(`account_${this.id || ''}`, JSON.stringify(tokenData))
+        if (!this.id) throw new Error('`id` is absent')
+
+        this.storage.setItem(`account_${this.id}`, JSON.stringify(tokenData))
 
         return true
       })
@@ -277,7 +292,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     if (!params) throw new TypeError(`Incorrect parameter 'params': ${params}`)
 
     const fetchAccount = data => this._fetchRetry(() => this.provider
-      .accountRequest(this.myAccountId, data.access_token))
+      .accountRequest(this.label, data.access_token))
       .then(this._checkStatus)
       .then(this._parseJSON)
       .then((res) => {
@@ -303,12 +318,12 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   /**
    * Fetch refresh token
    */
-  _fetchRefreshToken (id: string, refreshToken: string = ''): Promise<*> {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
+  _fetchRefreshToken (label: string, refreshToken: string = ''): Promise<*> {
+    if (!label) throw new TypeError('Incorrect parameter `label`')
     if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
     const fetchAccount = data => this._fetchRetry(() => this.provider
-      .accountRequest(this.myAccountId, data.access_token))
+      .accountRequest(this.label, data.access_token))
       .then(this._checkStatus)
       .then(this._parseJSON)
       .then((res) => {
@@ -319,7 +334,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
         return data
       })
 
-    return this._fetchRetry(() => this.provider.refreshAccessTokenRequest(id, refreshToken))
+    return this._fetchRetry(() => this.provider.refreshAccessTokenRequest(label, refreshToken))
       .then(this._checkStatus)
       .then(this._parseJSON)
       .then((data) => {

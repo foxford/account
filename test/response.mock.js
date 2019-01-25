@@ -5,11 +5,13 @@ export const signInResponse = {
   token_type: 'Bearer',
 }
 
-export const signInId = 'a258f91f-f101-4b50-b5d3-a3d50ebd8965'
+export const signInId = 'me.hello.world'
 
 export const signInRefreshToken = '23456'
 
-export const myAccountId = 'me'
+export const label = 'me'
+
+export const audience = 'hello.world'
 
 export const refreshResponse = {
   access_token: '34567',
@@ -22,5 +24,5 @@ export const revokeResponse = {
 }
 
 export const accountResponse = {
-  id: 'a258f91f-f101-4b50-b5d3-a3d50ebd8965',
+  id: 'me.hello.world',
 }

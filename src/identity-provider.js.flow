@@ -2,7 +2,7 @@
 
 type Key = string;
 
-export type Id = string;
+export type Label = string;
 
 export type Token = string;
 
@@ -11,9 +11,10 @@ export type ClientToken = {
   client_token: Token
 };
 
+// TODO: simplify interface methods
 export interface AccountProvider {
   accessTokenRequest(a: Key, b: ClientToken): Request;
-  refreshAccessTokenRequest(a: Id, b: Token): Request;
-  revokeRefreshTokenRequest(a: Id, b: Token): Request;
-  accountRequest(a: Id, b: Token): Request;
+  refreshAccessTokenRequest(a: Label, b: Token): Request;
+  revokeRefreshTokenRequest(a: Label, b: Token): Request;
+  accountRequest(a: Label, b: Token): Request;
 }
