@@ -26,16 +26,16 @@
   },
   "scripts": {
     "build": "cross-env NODE_ENV=production webpack -p",
-    "precoverage": "rm -rf .nyc_output coverage && mkdir -p coverage",
-    "coverage": "npm run nodetap -- --nyc-arg=--require=./test/babel-register.js --cov",
+    "precoverage": "rm -rf .nyc_output coverage && mkdir -p coverage .nyc_output",
+    "coverage": "tap \"test/**/*.test.js\" --nyc-arg=--require=./test/babel-register.js --cov",
     "postcoverage": "tap --coverage-report=text-lcov > coverage/coverage.lcov && codecov",
     "flow": "flow check",
     "lint": "eslint src",
-    "nodetap": "npm run tap -- test/**/*.test.js",
     "prepublishOnly": "npm run build",
     "start": "npm run test && npm run build",
-    "tap": "cross-env BABEL_ENV=cjs tap --node-arg=--require=./test/babel-register.js",
-    "test": "npm run lint && npm run nodetap && npm run flow"
+    "tap": "tap --node-arg=--require=./test/babel-register.js",
+    "test": "npm run lint && npm run tests && npm run flow",
+    "tests": "npm run tap \"test/**/*.test.js\""
   },
   "dependencies": {
     "debug": "^4.1.1"
@@ -59,7 +59,7 @@
     "isomorphic-fetch": "^2.2.1",
     "pino": "^4.10.3",
     "rimraf": "^2.6.2",
-    "tap": "^12.1.2",
+    "tap": "^12.4.0",
     "webpack": "^3.11.0",
     "whatwg-fetch": "^3.0.0"
   },

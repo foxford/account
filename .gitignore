@@ -120,3 +120,5 @@ data/
 
 # Bundle
 dist/
+
+.nyc_output
