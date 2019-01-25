@@ -31,12 +31,11 @@
     "postcoverage": "tap --coverage-report=text-lcov > coverage/coverage.lcov && codecov",
     "flow": "flow check",
     "lint": "eslint src",
-    "mocha": "mocha --recursive \"test/**/*.test.js\"",
     "nodetap": "npm run tap -- test/**/*.test.js",
     "prepublishOnly": "npm run build",
     "start": "npm run test && npm run build",
     "tap": "cross-env BABEL_ENV=cjs tap --node-arg=--require=./test/babel-register.js",
-    "test": "npm run lint && npm run mocha && npm run flow"
+    "test": "npm run lint && npm run nodetap && npm run flow"
   },
   "dependencies": {
     "debug": "^4.1.1"
@@ -58,7 +57,6 @@
     "flow-bin": "^0.91.0",
     "flow-typed": "^2.5.1",
     "isomorphic-fetch": "^2.2.1",
-    "mocha": "^5.2.0",
     "pino": "^4.10.3",
     "rimraf": "^2.6.2",
     "tap": "^12.1.2",

@@ -24,26 +24,3 @@ export const revokeResponse = {
 export const accountResponse = {
   id: 'a258f91f-f101-4b50-b5d3-a3d50ebd8965',
 }
-
-export const removeAccountResponse = {
-  id: 'a258f91f-f101-4b50-b5d3-a3d50ebd8965',
-}
-
-export const linkParams = {
-  client_token: '09876',
-  grant_type: 'client_credentials',
-}
-
-export const authResponse = [
-  {
-    id: 'oauth2.key.John',
-  },
-]
-
-export const linkResponse = {
-  id: 'oauth2.key.John',
-}
-
-export const unLinkResponse = {
-  id: 'oauth2.key',
-}
