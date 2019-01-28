@@ -34,8 +34,8 @@
     "prepublishOnly": "npm run build",
     "start": "npm run test && npm run build",
     "tap": "tap --node-arg=--require=./test/babel-register.js",
-    "test": "npm run lint && npm run tests && npm run flow",
-    "tests": "npm run tap \"test/**/*.test.js\""
+    "tapas": "npm run tap \"test/**/*.test.js\"",
+    "test": "npm run lint && npm run tapas && npm run flow"
   },
   "dependencies": {
     "debug": "^4.1.1"

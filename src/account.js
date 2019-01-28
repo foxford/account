@@ -50,6 +50,43 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     this.id = id
   }
 
+  load (): Promise<mixed> {
+    if (!this.id) return Promise.reject(new TypeError('`id` is absent'))
+
+    return Promise.resolve(this.storage.getItem(this.id))
+      .then(maybeValue => !maybeValue ? maybeValue : JSON.parse(maybeValue))
+  }
+
+  remove (): Promise<mixed> {
+    if (!this.id) return Promise.reject(new TypeError('`id` is absent'))
+
+    return Promise.resolve(this.storage.getItem(this.id))
+  }
+
+  store (data: TokenData): Promise<mixed> {
+    if (!this.id) return Promise.reject(new TypeError('`id` is absent'))
+
+    const { id } = this
+
+    return Promise.resolve(data)
+      .then((_) => {
+        if (!this.id) return Promise.reject(new TypeError('`id` is absent'))
+
+        if (!_.expires_in) return _
+        // bypass token unless `expires_in` is not present
+
+        const expin = Number(_.expires_in)
+        if (isNaN(expin)) throw new TypeError('Wrong `expires_in` value')
+
+        return ({ ..._, expires_time: (Number(_.expires_in) || 0) * 1e3 })
+      })
+      .then((_) => {
+        this.storage.setItem(id, JSON.stringify(_))
+
+        return _
+      })
+  }
+
   // eslint-disable-next-line class-methods-use-this
   _createLabel (audience: string, label: string = 'me', separator: string = '.'): { label: string, id: string } {
     if (!audience) throw new TypeError('`audience` is absent')
