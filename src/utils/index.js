@@ -55,7 +55,7 @@ export const parsedResponse = (response: Response): Promise<Object> => {
   }
 }
 
-export const parse = (fn: Function): Promise<*> => {
+export const parse = (fn: Function | string): Promise<*> => {
   const it = typeof fn === 'function' ? fn() : fn
   if (typeof it !== 'string') throw new TypeError('Can not parse')
 

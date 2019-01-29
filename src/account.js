@@ -67,17 +67,29 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     return this.legacyLabel ? this.label : this.id
   }
 
-  load (authKey: string = ''): Promise<Object> {
+  load (authKey: string = ''): Promise<TokenData> {
     const label = authKey || this.id
     if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
-    return Promise.resolve(() => this.storage.getItem(this.id)).then(parse)
+    return Promise.resolve(() => this.storage.getItem(this.id))
+      .then((fn) => {
+        const value = fn()
+        if (!value) throw new TypeError('Can not load data')
+
+        return parse(value)
+      })
   }
 
-  remove (): Promise<mixed> {
-    if (!this.id) return Promise.reject(new TypeError('`id` is absent'))
+  remove (authKey: string = ''): Promise<TokenData> {
+    const label = authKey || this.id
+    if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
-    return Promise.resolve(this.storage.getItem(this.id))
+    return this.load(label)
+      .then((tokenData) => {
+        this.storage.removeItem(this.id)
+
+        return tokenData
+      })
   }
 
   store (data: TokenData): Promise<mixed> {
