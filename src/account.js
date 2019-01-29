@@ -138,7 +138,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       .then((data: TokenData) => {
         const { access_token } = data
 
-        return this.provider.accountRequest(this._requestLabel(), access_token)
+        return this.provider.account(this._requestLabel(), access_token)
       })
       .then(req => this._fetchRetry(() => req))
       .then(validResponse)
@@ -160,7 +160,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
         const { refresh_token } = maybeValidTokens
 
-        return this.provider.refreshAccessTokenRequest(this._requestLabel(), refresh_token)
+        return this.provider.refreshAccessToken(this._requestLabel(), refresh_token)
       })
       .then((req: TRequest) => this._fetchRetry(() => req))
       .then(validResponse)
@@ -183,7 +183,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       .then((maybeToken) => {
         const { refresh_token } = maybeToken
 
-        return this.provider.revokeRefreshTokenRequest(this._requestLabel(), refresh_token)
+        return this.provider.revokeRefreshToken(this._requestLabel(), refresh_token)
       })
       .then((req: TRequest) => this._fetchRetry(() => req))
       .then(validResponse)
@@ -313,7 +313,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       return this._getTokenDataP()
         .then(({ refresh_token }) => this._isTokenExist('refresh_token')(refresh_token))
         .then(token => this
-          ._fetchRetry(() => this.provider.revokeRefreshTokenRequest(label, token)))
+          ._fetchRetry(() => this.provider.revokeRefreshToken(label, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
         .then((res) => {
@@ -334,7 +334,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
       return this._getTokenDataP()
         .then(({ access_token }) => this._isTokenExist()(access_token))
-        .then(token => this._fetchRetry(() => this.provider.accountRequest(label, token)))
+        .then(token => this._fetchRetry(() => this.provider.account(label, token)))
         .then(this._checkStatus)
         .then(this._parseJSON)
     }
@@ -394,7 +394,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     if (!params) throw new TypeError(`Incorrect parameter 'params': ${params}`)
 
     const fetchAccount = data => this._fetchRetry(() => this.provider
-      .accountRequest(this.label, data.access_token))
+      .account(this.label, data.access_token))
       .then(this._checkStatus)
       .then(this._parseJSON)
       .then((res) => {
@@ -425,7 +425,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
     const fetchAccount = data => this._fetchRetry(() => this.provider
-      .accountRequest(this.label, data.access_token))
+      .account(this.label, data.access_token))
       .then(this._checkStatus)
       .then(this._parseJSON)
       .then((res) => {

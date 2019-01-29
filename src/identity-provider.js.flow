@@ -1,20 +1,12 @@
 /** @flow strict-local */
 
-type Key = string;
-
 export type Label = string;
 
 export type Token = string;
 
-export type ClientToken = {
-  grant_type: string,
-  client_token: Token
-};
-
 // TODO: simplify interface methods
-export interface AccountProvider {
-  accessTokenRequest(a: Key, b: ClientToken): Request;
-  refreshAccessTokenRequest(a: Label, b: Token): Request;
-  revokeRefreshTokenRequest(a: Label, b: Token): Request;
-  accountRequest(a: Label, b: Token): Request;
+export interface Provider {
+  refreshAccessToken(a: Label, b: Token): Request;
+  revokeRefreshToken(a: Label, b: Token): Request;
+  account(a: Label, b: Token): Request;
 }

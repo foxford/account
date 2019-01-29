@@ -1,7 +1,6 @@
 /** @flow */
 import type {
-  AccountProvider,
-  ClientToken,
+  Provider,
   Token,
   Label,
 } from './identity-provider.js.flow'
@@ -12,7 +11,7 @@ type EndpointConfig = {
   authnEndpoint?: string | Function
 }
 
-export class IdP<Config: EndpointConfig> implements AccountProvider {
+export class IdP<Config: EndpointConfig> implements Provider {
   endpoint: string;
 
   accountEndpoint: string;
@@ -43,27 +42,7 @@ export class IdP<Config: EndpointConfig> implements AccountProvider {
     this.authnEndpoint = _authnEndpoint(config)
   }
 
-  accessTokenRequest (authKey: string, token: ClientToken): TRequest {
-    const { client_token, grant_type } = token
-    if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
-    if (!client_token) throw new TypeError(`Incorrect parameters 'client_token': ${client_token}`)
-    if (!grant_type) throw new TypeError(`Incorrect parameters 'grant_type': ${grant_type}`)
-
-    const uri = `${this.authnEndpoint}/${authKey}/token`
-
-    return new Request(uri, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        client_token,
-        grant_type,
-      }),
-    })
-  }
-
-  refreshAccessTokenRequest (label: Label, refreshToken: Token): TRequest {
+  refreshAccessToken (label: Label, refreshToken: Token): Request {
     if (!label) throw new TypeError('Incorrect parameter `label`')
     if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
@@ -77,7 +56,7 @@ export class IdP<Config: EndpointConfig> implements AccountProvider {
     })
   }
 
-  revokeRefreshTokenRequest (label: Label, refreshToken: Token): TRequest {
+  revokeRefreshToken (label: Label, refreshToken: Token): Request {
     if (!label) throw new TypeError('Incorrect parameter `label`')
     if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
 
@@ -91,7 +70,7 @@ export class IdP<Config: EndpointConfig> implements AccountProvider {
     })
   }
 
-  accountRequest (label: Label, accessToken: Token): TRequest {
+  account (label: Label, accessToken: Token): Request {
     if (!label) throw new TypeError('Incorrect parameter `label`')
     if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
