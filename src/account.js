@@ -154,7 +154,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       })
       .then((req: TRequest) => this.fetchFn(() => req, this.fetchOpts))
       .then(validResponse)
-      .then((_) => parsedResponse(_))
+      .then(parsedResponse)
       // eslint-disable-next-line promise/no-nesting
       .then((_: TRevokeResponse) => this.load(label)
         .then(old => this.store({

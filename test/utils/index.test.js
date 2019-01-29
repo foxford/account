@@ -1,42 +1,86 @@
 import tap from 'tap'
 
-import { saveData } from '../../src/utils'
+import { isExpired, validResponse, parsedResponse, parse } from '../../src/utils/index'
 
-const ACC_TOKEN = 'access_token'
-const REF_TOKEN = 'refresh_token'
+global.self = global
+// bind global to self for the fetch polyfill
+require('whatwg-fetch') // eslint-disable-line node/no-unpublished-require
 
-tap.test('`saveData` utility', (t) => {
-  t.test('enhance data with token', (test) => {
-    const untokenedData = {
-      [ACC_TOKEN]: 'token',
-    }
+tap.test('`isExpired` utility', (t) => {
+  const now = Date.now()
 
-    saveData((data) => {
-      const expectData = { [ACC_TOKEN]: 'token', [REF_TOKEN]: 'newtoken' }
+  tap.same(isExpired(null), true)
+  tap.same(isExpired(0), true)
+  tap.same(isExpired({ expires_time: 0 }), true)
+  tap.same(isExpired({ expires_time: '1000.1' }), true)
+  tap.same(isExpired({ expires_time: now + 2000 }), true)
+  tap.same(isExpired({ expires_time: now + 5000 }), false)
 
-      tap.equal(data === expectData, false)
-      tap.deepEqual(data, expectData)
-    }, untokenedData, 'newtoken')
+  t.end()
+})
 
-    saveData((data) => {
-      const expectData = { [ACC_TOKEN]: 'token', [REF_TOKEN]: '' }
+tap.test('`validResponse` utility', (t) => {
+  const okResponse = new Response()
 
-      tap.equal(data === expectData, false)
-      tap.deepEqual(data, expectData)
-    }, untokenedData)
+  okResponse.status = 200
 
-    saveData((data) => {
-      const expectData = { [ACC_TOKEN]: 'token', [REF_TOKEN]: 'token' }
+  const redirectResponse = new Response()
 
-      tap.equal(data === expectData, false)
-      tap.deepEqual(data, expectData)
-    }, {
-      [ACC_TOKEN]: 'token',
-      [REF_TOKEN]: 'token',
+  redirectResponse.status = 300
+
+  tap.deepEqual(validResponse(okResponse), okResponse)
+  tap.throws(() => {
+    validResponse(redirectResponse)
+  }, { message: 'OK' })
+
+  t.end()
+})
+
+tap.test('`parsedResponse` utility', (t) => {
+  tap.throws(() => {
+    parsedResponse()
+  }, { message: '`response` is absent' })
+
+  parsedResponse(new Response()).catch((error) => {
+    tap.same(error.message, 'Unexpected end of JSON input')
+  })
+
+  parsedResponse(new Response({ a: 123 })).catch((error) => {
+    tap.same(error.message, 'Unexpected token o in JSON at position 1')
+  })
+
+  parsedResponse(new Response('{"a":123}'))
+    .then((a) => {
+      tap.same(a, { a: 123 })
+
+      return a
+    })
+    .catch(tap.error)
+
+  t.end()
+})
+
+tap.test('`parse` utility', (t) => {
+  tap.throws(() => {
+    parse(() => ({ a: 123 }))
+  }, { message: 'Can not parse' })
+
+  tap.throws(() => {
+    parse(() => 123)
+  }, { message: 'Can not parse' })
+
+  parse(() => 'hello')
+    .catch((error) => {
+      tap.same(error.message, 'Unexpected token h in JSON at position 0')
     })
 
-    test.end()
-  })
+  parse(() => '{"a":123}')
+    .then((res) => {
+      tap.same(res, { a: 123 })
+
+      return res
+    })
+    .catch(tap.error)
 
   t.end()
 })

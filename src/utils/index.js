@@ -1,14 +1,6 @@
 /** @flow */
 import type { TokenData } from '../account.js.flow'
 
-type Callback<T> = (a: T) => mixed
-
-export const saveData = (cb: Callback<TokenData>, data: TokenData, token: string = '') => cb(!data.refresh_token
-  ? Object.assign({}, data, { refresh_token: token })
-  : data)
-
-export const isEnv = (env: string, key: string = 'production'): boolean => env === key
-
 export const fetchRetry = (requestFn: Function, opts: Object): Promise<Response> => {
   if (!requestFn) throw new TypeError(`Missing 'requestFn': ${requestFn}`)
 
@@ -54,7 +46,7 @@ export const validResponse = (response: Response): Response => {
 }
 
 export const parsedResponse = (response: Response): Promise<Object> => {
-  if (!response) throw new TypeError(`Missing 'response': ${response}`)
+  if (!response) throw new TypeError('`response` is absent')
 
   try {
     return response.json()
@@ -67,5 +59,11 @@ export const parse = (fn: Function): Promise<*> => {
   const it = typeof fn === 'function' ? fn() : fn
   if (typeof it !== 'string') throw new TypeError('Can not parse')
 
-  return Promise.resolve(JSON.parse(it))
+  return new Promise((resolve, reject) => {
+    try {
+      resolve(JSON.parse(it))
+    } catch (error) {
+      reject(error)
+    }
+  })
 }
