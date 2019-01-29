@@ -3,6 +3,6 @@ type Key = string
 
 export interface IAbstractStorage {
   setItem(a: Key, b: string): void;
-  getItem(a: Key): string;
+  getItem(a: Key): string | null;
   removeItem(a: Key): void;
 }

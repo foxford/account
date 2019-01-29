@@ -18,6 +18,31 @@ const LEEWAY = 3000
 
 const debug = x => x
 
+const validResponse = (response: Response): Response => {
+  if (response.status && response.status >= 200 && response.status < 300) {
+    return response
+  }
+
+  throw new Error(response.statusText || `Invalid request. Status: ${response.status}`)
+}
+
+const parsedResponse = (response: Response): Promise<Object> => {
+  if (!response) throw new TypeError(`Missing 'response': ${response}`)
+
+  try {
+    return response.json()
+  } catch (error) {
+    throw new Error('Response is not a JSON')
+  }
+}
+
+const parse = (fn): Promise<*> => {
+  const it = typeof fn === 'function' ? fn() : fn
+  if (typeof it !== 'string') throw new TypeError('Can not parse')
+
+  return Promise.resolve(JSON.parse(it))
+}
+
 export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   storage: Storage;
 
@@ -31,7 +56,9 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
   label: string;
 
-  id: string | null;
+  legacyLabel: boolean | void;
+
+  id: string;
 
   constructor (config: Config, storage: Storage) {
     if (!config || !config.provider) throw new TypeError('Missing `provider` in config')
@@ -43,18 +70,35 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     this.retries = config.retries || MAX_AJAX_RETRY
     this.retryDelay = config.retryDelay || AJAX_RETRY_DELAY
     this.leeway = config.leeway || LEEWAY
+    this.legacyLabel = config.legacyLabel || false
 
     const { id, label } = this._createLabel(config.audience, config.label)
 
     this.label = label
     this.id = id
+
+    if (!this.id) throw new TypeError('Failed to configure account. Id is not present')
   }
 
-  load (): Promise<mixed> {
-    if (!this.id) return Promise.reject(new TypeError('`id` is absent'))
+  // eslint-disable-next-line class-methods-use-this
+  _createLabel (audience: string, label: string = 'me', separator: string = '.'): { label: string, id: string } {
+    if (!audience) throw new TypeError('`audience` is absent')
 
-    return Promise.resolve(this.storage.getItem(this.id))
-      .then(maybeValue => !maybeValue ? maybeValue : JSON.parse(maybeValue))
+    return {
+      label,
+      id: `${label}${separator}${audience}`,
+    }
+  }
+
+  _requestLabel (): string {
+    return this.legacyLabel ? this.label : this.id
+  }
+
+  load (authKey: string = ''): Promise<Object> {
+    const label = authKey || this.id
+    if (!label) return Promise.reject(new TypeError('`label` is absent'))
+
+    return Promise.resolve(() => this.storage.getItem(this.id)).then(parse)
   }
 
   remove (): Promise<mixed> {
@@ -87,14 +131,69 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       })
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  _createLabel (audience: string, label: string = 'me', separator: string = '.'): { label: string, id: string } {
-    if (!audience) throw new TypeError('`audience` is absent')
+  account (authKey: string = ''): Promise<TokenData> {
+    const label = authKey || this.id
 
-    return {
-      label,
-      id: `${label}${separator}${audience}`,
-    }
+    return this.accessToken(label)
+      .then((data: TokenData) => {
+        const { access_token } = data
+
+        return this.provider.accountRequest(this._requestLabel(), access_token)
+      })
+      .then(req => this._fetchRetry(() => req))
+      .then(validResponse)
+      .then(parsedResponse)
+  }
+
+  accessToken (authKey: string = ''): Promise<*> {
+    const label = authKey || this.id
+
+    type TRefreshReponse = { access_token: string, expires_in: number, token_type: string }
+
+    return this.load(label)
+      .then((maybeValidTokens: TokenData) => {
+        console.log({ maybeValidTokens })
+        const isExpired = this._isTokenExpired(maybeValidTokens)
+
+        console.log({ isExpired })
+        // if (!isExpired) return maybeValidTokens
+
+        const { refresh_token } = maybeValidTokens
+
+        return this.provider.refreshAccessTokenRequest(this._requestLabel(), refresh_token)
+      })
+      .then((req: TRequest) => this._fetchRetry(() => req))
+      .then(validResponse)
+      .then((_): TRefreshReponse => parsedResponse(_))
+      // eslint-disable-next-line promise/no-nesting
+      .then(_ => this.load(label)
+        .then(old => this.store({
+          ...old,
+          access_token: _.access_token,
+          expires_in: _.expires_in,
+        })))
+  }
+
+  revokeRefreshToken (authKey: string = ''): Promise<*> {
+    const label = authKey || this.id
+
+    type TRevokeResponse = { refresh_token: string }
+
+    return this.load(label)
+      .then((maybeToken) => {
+        const { refresh_token } = maybeToken
+
+        return this.provider.revokeRefreshTokenRequest(this._requestLabel(), refresh_token)
+      })
+      .then((req: TRequest) => this._fetchRetry(() => req))
+      .then(validResponse)
+      .then((_): TRefreshReponse => parsedResponse(_))
+      // eslint-disable-next-line promise/no-nesting
+      .then(_ => this.load(label)
+        .then(old => this.store({
+          ...old,
+          refresh_token: _.refresh_token,
+        })))
   }
 
   _getTokenDataP (): Promise<TokenData> {

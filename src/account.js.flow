@@ -20,15 +20,23 @@ type UnrefreshableData = {
   expires_time?: number,
 }
 
-export type TokenData = UnrefreshableData & RefreshableData
+// export type TokenData = UnrefreshableData & RefreshableData
+
+export type TokenData = {
+  access_token: string,
+  refresh_token: string,
+  expires_in: number,
+  expires_time: number,
+}
 
 export type CallableP<T> = () => T
 
 export type AccountConfig = {
+  audience: string,
   label: string,
   leeway: number,
+  legacyLabel?: boolean,
   myAccountId: Id,
-  audience: string,
   provider: IdP<EndpointConfig>,
   retries: number,
   retryDelay: number,
