@@ -2,7 +2,7 @@
 import type { IdP } from './idp'
 import type { IAbstractStorage as AbstractStorage } from './storage.js.flow'
 import type { AccountConfig, TokenData } from './account.js.flow'
-import { fetchRetry } from './utils/index'
+import { fetchRetry, isExpired, validResponse, parsedResponse, parse } from './utils/index'
 
 type EndpointConfig = {
   endpoint: string,
@@ -13,31 +13,6 @@ type EndpointConfig = {
 const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
 const LEEWAY = 3000
-
-const validResponse = (response: Response): Response => {
-  if (response.status && response.status >= 200 && response.status < 300) {
-    return response
-  }
-
-  throw new Error(response.statusText || `Invalid request. Status: ${response.status}`)
-}
-
-const parsedResponse = (response: Response): Promise<Object> => {
-  if (!response) throw new TypeError(`Missing 'response': ${response}`)
-
-  try {
-    return response.json()
-  } catch (error) {
-    throw new Error('Response is not a JSON')
-  }
-}
-
-const parse = (fn): Promise<*> => {
-  const it = typeof fn === 'function' ? fn() : fn
-  if (typeof it !== 'string') throw new TypeError('Can not parse')
-
-  return Promise.resolve(JSON.parse(it))
-}
 
 export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   fetchFn: Function;
@@ -72,8 +47,6 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       delay: config.retryDelay || AJAX_RETRY_DELAY,
       retries: config.retries || MAX_AJAX_RETRY,
     }
-    this.retries = config.retries || MAX_AJAX_RETRY
-    this.retryDelay = config.retryDelay || AJAX_RETRY_DELAY
     this.leeway = config.leeway || LEEWAY
     this.legacyLabel = config.legacyLabel || false
 
@@ -157,9 +130,9 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
     return this.load(label)
       .then((maybeValidTokens: TokenData) => {
-        const isExpired = this._isTokenExpired(maybeValidTokens)
+        const expired = isExpired(maybeValidTokens, this.leeway)
 
-        if (!isExpired) return maybeValidTokens
+        if (!expired) return maybeValidTokens
 
         const { refresh_token } = maybeValidTokens
 
@@ -197,17 +170,6 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
           ...old,
           refresh_token: _.refresh_token,
         })))
-  }
-
-  /**
-   * Check token expire
-   */
-  _isTokenExpired (data: TokenData): boolean {
-    const isExpired = x => !x
-    || !x.expires_time
-    || Date.now() > (Number(x.expires_time) - this.leeway)
-
-    return isExpired(data)
   }
 }
 

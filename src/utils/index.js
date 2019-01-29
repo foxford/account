@@ -33,3 +33,39 @@ export const fetchRetry = (requestFn: Function, opts: Object): Promise<Response>
     wrappedFetch(opts.retries || 3)
   })
 }
+
+/**
+ * Check token expire
+ */
+export const isExpired = (data: TokenData, leeway: Number = 3e3): boolean => {
+  const _isExpired = x => !x
+    || !x.expires_time
+    || Date.now() > (Number(x.expires_time) - leeway)
+
+  return _isExpired(data)
+}
+
+export const validResponse = (response: Response): Response => {
+  if (response.status && response.status >= 200 && response.status < 300) {
+    return response
+  }
+
+  throw new Error(response.statusText || `Invalid request. Status: ${response.status}`)
+}
+
+export const parsedResponse = (response: Response): Promise<Object> => {
+  if (!response) throw new TypeError(`Missing 'response': ${response}`)
+
+  try {
+    return response.json()
+  } catch (error) {
+    throw new Error('Response is not a JSON')
+  }
+}
+
+export const parse = (fn): Promise<*> => {
+  const it = typeof fn === 'function' ? fn() : fn
+  if (typeof it !== 'string') throw new TypeError('Can not parse')
+
+  return Promise.resolve(JSON.parse(it))
+}
