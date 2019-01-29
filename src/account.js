@@ -1,14 +1,9 @@
 /** @flow */
 import type { IdP } from './idp'
+import type { EndpointConfig } from './identity-provider.js.flow'
 import type { IAbstractStorage as AbstractStorage } from './storage.js.flow'
-import type { AccountConfig, TokenData } from './account.js.flow'
+import type { AccountConfig, TokenData, TRefreshReponse, TRevokeResponse } from './account.js.flow'
 import { fetchRetry, isExpired, validResponse, parsedResponse, parse } from './utils/index'
-
-type EndpointConfig = {
-  endpoint: string,
-  accountEndpoint?: string | Function,
-  authnEndpoint?: string | Function
-}
 
 const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
@@ -126,8 +121,6 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   accessToken (authKey: string = ''): Promise<*> {
     const label = authKey || this.id
 
-    type TRefreshReponse = { access_token: string, expires_in: number, token_type: string }
-
     return this.load(label)
       .then((maybeValidTokens: TokenData) => {
         const expired = isExpired(maybeValidTokens, this.leeway)
@@ -140,9 +133,9 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       })
       .then((req: TRequest) => this.fetchFn(() => req, this.fetchOpts))
       .then(validResponse)
-      .then((_): TRefreshReponse => parsedResponse(_))
+      .then(parsedResponse)
       // eslint-disable-next-line promise/no-nesting
-      .then(_ => this.load(label)
+      .then((_: TRefreshReponse) => this.load(label)
         .then(old => this.store({
           ...old,
           access_token: _.access_token,
@@ -153,8 +146,6 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   revokeRefreshToken (authKey: string = ''): Promise<*> {
     const label = authKey || this.id
 
-    type TRevokeResponse = { refresh_token: string }
-
     return this.load(label)
       .then((maybeToken) => {
         const { refresh_token } = maybeToken
@@ -163,9 +154,9 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       })
       .then((req: TRequest) => this.fetchFn(() => req, this.fetchOpts))
       .then(validResponse)
-      .then((_): TRevokeResponse => parsedResponse(_))
+      .then((_) => parsedResponse(_))
       // eslint-disable-next-line promise/no-nesting
-      .then(_ => this.load(label)
+      .then((_: TRevokeResponse) => this.load(label)
         .then(old => this.store({
           ...old,
           refresh_token: _.refresh_token,

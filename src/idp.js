@@ -1,15 +1,10 @@
 /** @flow */
 import type {
+  EndpointConfig,
   Provider,
   Token,
   Label,
 } from './identity-provider.js.flow'
-
-type EndpointConfig = {
-  endpoint: string,
-  accountEndpoint?: string | Function,
-  authnEndpoint?: string | Function
-}
 
 export class IdP<Config: EndpointConfig> implements Provider {
   endpoint: string;

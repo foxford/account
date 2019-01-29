@@ -1,50 +1,26 @@
-/** @flow */
+/** @flow strict-local */
 import type { IdP } from './idp'
-import type { ClientToken } from './identity-provider.js.flow'
+import type { EndpointConfig } from './identity-provider.js.flow'
 
-type Id = string
-
-type EndpointConfig = {
-  endpoint: string,
-  accountEndpoint?: string | Function,
-  authnEndpoint?: string | Function
-}
-
-type RefreshableData = {
-  refresh_token?: string,
-}
-
-type UnrefreshableData = {
-  access_token?: string,
-  expires_in?: number,
-  expires_time?: number,
-}
-
-// export type TokenData = UnrefreshableData & RefreshableData
+type Token = string
 
 export type TokenData = {
-  access_token: string,
-  refresh_token: string,
+  access_token: Token,
+  refresh_token: Token,
   expires_in: number,
   expires_time: number,
 }
 
-export type CallableP<T> = () => T
+export type TRefreshReponse = { access_token: Token, expires_in: number, token_type: string }
+
+export type TRevokeResponse = { refresh_token: Token }
 
 export type AccountConfig = {
   audience: string,
   label: string,
   leeway: number,
   legacyLabel?: boolean,
-  myAccountId: Id,
   provider: IdP<EndpointConfig>,
   retries: number,
   retryDelay: number,
-}
-
-export type SignInOptions = {
-  auth_key: string,
-  params: ClientToken,
-  refresh_token: ?string,
-  data?: TokenData
 }

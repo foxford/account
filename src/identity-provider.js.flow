@@ -4,6 +4,12 @@ export type Label = string;
 
 export type Token = string;
 
+export type EndpointConfig = {
+  endpoint: string,
+  accountEndpoint?: string | () => string,
+  authnEndpoint?: string | () => string
+}
+
 // TODO: simplify interface methods
 export interface Provider {
   refreshAccessToken(a: Label, b: Token): Request;

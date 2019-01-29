@@ -37,7 +37,7 @@ export const fetchRetry = (requestFn: Function, opts: Object): Promise<Response>
 /**
  * Check token expire
  */
-export const isExpired = (data: TokenData, leeway: Number = 3e3): boolean => {
+export const isExpired = (data: TokenData, leeway: number = 3e3): boolean => {
   const _isExpired = x => !x
     || !x.expires_time
     || Date.now() > (Number(x.expires_time) - leeway)
@@ -63,7 +63,7 @@ export const parsedResponse = (response: Response): Promise<Object> => {
   }
 }
 
-export const parse = (fn): Promise<*> => {
+export const parse = (fn: Function): Promise<*> => {
   const it = typeof fn === 'function' ? fn() : fn
   if (typeof it !== 'string') throw new TypeError('Can not parse')
 
