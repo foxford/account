@@ -1,6 +1,6 @@
 {
   "name": "@netology-group/account",
-  "version": "1.1.1",
+  "version": "2.0.0",
   "description": "account client",
   "keywords": [
     "authentication",
@@ -48,7 +48,6 @@
     "@babel/register": "^7.0.0",
     "babel-eslint": "^10.0.1",
     "babel-loader": "^8.0.5",
-    "es6-promise": "^4.1.1",
     "eslint": "^5.6.1",
     "eslint-config-adequate": "^1.1.4",
     "eslint-plugin-flowtype": "^3.2.1",

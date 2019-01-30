@@ -1,5 +1,6 @@
-const webpack = require('webpack')
+const webpack = require('webpack') // eslint-disable-line node/no-unpublished-require
 
+const babelrc = require('./.babelrc.json')
 const { version } = require('./package.json')
 
 module.exports = {
@@ -18,10 +19,7 @@ module.exports = {
         exclude: /(node_modules|bower_components)/,
         use: {
           loader: 'babel-loader',
-          options: {
-            cacheDirectory: true,
-            presets: ['env'],
-          },
+          options: babelrc.env.cjs,
         },
       },
     ],
