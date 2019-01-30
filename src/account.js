@@ -20,7 +20,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
   leeway: number;
 
-  legacyLabel: boolean | void;
+  requestMode: 'label' | 'id';
 
   provider: IdP<EndpointConfig>;
 
@@ -43,7 +43,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       retries: config.retries || MAX_AJAX_RETRY,
     }
     this.leeway = config.leeway || LEEWAY
-    this.legacyLabel = config.legacyLabel || false
+    this.requestMode = config.requestMode || 'id'
 
     const { id, label } = this._createLabel(config.audience, config.label)
 
@@ -64,7 +64,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   _requestLabel (): string {
-    return this.legacyLabel ? this.label : this.id
+    return this.requestMode === 'label' ? this.label : this.id
   }
 
   load (authKey: string = ''): Promise<TokenData> {

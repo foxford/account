@@ -19,7 +19,7 @@ export type AccountConfig = {
   audience: string,
   label: string,
   leeway: number,
-  legacyLabel?: boolean,
+  requestMode?: 'label' | 'id',
   provider: IdP<EndpointConfig>,
   retries: number,
   retryDelay: number,
