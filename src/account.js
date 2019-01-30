@@ -118,19 +118,23 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   account (storageLabel: string = ''): Promise<TokenData> {
     const label = storageLabel || this.id
 
+    const fn = this.provider.account
+
     return this.tokenData(label)
       .then((data: TokenData) => {
         const { access_token } = data
 
-        return this.provider.account(this._requestLabel(), access_token)
+        return [this._requestLabel(), access_token]
       })
-      .then((req: Request) => this.fetchFn(() => req, this.fetchOpts))
+      .then(req => this.fetchFn(() => fn.call(this.provider, ...req), this.fetchOpts))
       .then(validResponse)
       .then(parsedResponse)
   }
 
   tokenData (storageLabel: string = ''): Promise<TokenData> {
     const label = storageLabel || this.id
+
+    const fn = this.provider.refreshAccessToken
 
     return this.load(label)
       .then((maybeValidTokens: TokenData) => {
@@ -140,30 +144,33 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
         const { refresh_token } = maybeValidTokens
 
-        return this.provider.refreshAccessToken(this._requestLabel(), refresh_token)
+        // eslint-disable-next-line promise/no-nesting
+        return Promise.resolve([this._requestLabel(), refresh_token])
+          .then(req => this.fetchFn(() => fn.call(this.provider, ...req), this.fetchOpts))
+          .then(validResponse)
+          .then(parsedResponse)
+          // eslint-disable-next-line promise/no-nesting
+          .then((_: TRefreshReponse) => this.load(label)
+            .then(old => this.store({
+              ...old,
+              access_token: _.access_token,
+              expires_in: _.expires_in,
+            })))
       })
-      .then((req: Request) => this.fetchFn(() => req, this.fetchOpts))
-      .then(validResponse)
-      .then(parsedResponse)
-      // eslint-disable-next-line promise/no-nesting
-      .then((_: TRefreshReponse) => this.load(label)
-        .then(old => this.store({
-          ...old,
-          access_token: _.access_token,
-          expires_in: _.expires_in,
-        })))
   }
 
   revokeRefreshToken (storageLabel: string = ''): Promise<TokenData> {
     const label = storageLabel || this.id
 
+    const fn = this.provider.revokeRefreshToken
+
     return this.load(label)
       .then((maybeToken) => {
         const { refresh_token } = maybeToken
 
-        return this.provider.revokeRefreshToken(this._requestLabel(), refresh_token)
+        return [this._requestLabel(), refresh_token]
       })
-      .then((req: Request) => this.fetchFn(() => req, this.fetchOpts))
+      .then(req => this.fetchFn(() => fn.call(this.provider, ...req), this.fetchOpts))
       .then(validResponse)
       .then(parsedResponse)
       // eslint-disable-next-line promise/no-nesting
