@@ -10,7 +10,6 @@ export type EndpointConfig = {
   authnEndpoint?: string | () => string
 }
 
-// TODO: simplify interface methods
 export interface Provider {
   refreshAccessToken(a: Label, b: Token): Request;
   revokeRefreshToken(a: Label, b: Token): Request;
