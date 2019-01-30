@@ -69,7 +69,7 @@ export class IdP<Config: EndpointConfig> implements Provider {
     if (!label) throw new TypeError('Incorrect parameter `label`')
     if (!accessToken) throw new TypeError(`Incorrect parameter 'accessToken': ${accessToken}`)
 
-    const uri = `${this.accountEndpoint}/${label}`
+    const uri = `${this.authnEndpoint}/${label}`
 
     return new Request(uri, {
       method: 'GET',
