@@ -1,6 +1,6 @@
 {
   "name": "@netology-group/account",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "account client",
   "keywords": [
     "authentication",
@@ -19,7 +19,10 @@
   "contributors": [
     "Elay <e.tolchennikov@netology-group.ru>"
   ],
-  "main": "src/index.js",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/account.js",
   "directories": {
     "lib": "src",
     "test": "test"
