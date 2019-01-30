@@ -278,7 +278,10 @@ tap.test('Account', (t) => {
       access_token: 'somestring',
     })
       .then((data) => {
-        tap.same(data, { access_token: 'somestring' })
+        tap.same(data, {
+          access_token: 'somestring',
+          expires_time: 0,
+        })
 
         return test.end()
       })
@@ -288,6 +291,10 @@ tap.test('Account', (t) => {
   t.test('store a token that should be expired', (test) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
+    const _now = global.Date.now
+    const sometime = JSON.stringify(_now())
+
+    global.Date.now = () => Number(sometime)
 
     acc.store({
       expires_in: 2,
@@ -295,10 +302,16 @@ tap.test('Account', (t) => {
     })
       .then((data) => {
         tap.same(data, {
-          refresh_token: 'somestring', expires_in: 2, expires_time: 2e3,
+          refresh_token: 'somestring',
+          expires_in: 2,
+          expires_time: Date.now() + 2e3,
         })
 
-        return test.end()
+        return data
+      })
+      .finally(() => {
+        global.Date.now = _now
+        test.end()
       })
       .catch(tap.error)
   })

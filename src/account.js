@@ -71,7 +71,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     const label = authKey || this.id
     if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
-    return Promise.resolve(() => this.storage.getItem(this.id))
+    return Promise.resolve(() => this.storage.getItem(label))
       .then((fn) => {
         const value = fn()
         if (!value) throw new TypeError('Can not load data')
@@ -86,31 +86,30 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
     return this.load(label)
       .then((tokenData) => {
-        this.storage.removeItem(this.id)
+        this.storage.removeItem(label)
 
         return tokenData
       })
   }
 
-  store (data: TokenData): Promise<mixed> {
-    if (!this.id) return Promise.reject(new TypeError('`id` is absent'))
-
-    const { id } = this
+  store (data: TokenData, authKey: string = ''): Promise<TokenData> {
+    const label = authKey || this.id
+    if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
     return Promise.resolve(data)
       .then((_) => {
-        if (!this.id) return Promise.reject(new TypeError('`id` is absent'))
+        let expires_time: number = 0
 
-        if (!_.expires_in) return _
-        // bypass token unless `expires_in` is not present
+        if (_.expires_in) {
+          const expin = Number(_.expires_in)
+          if (isNaN(expin)) throw new TypeError('Wrong `expires_in` value')
+          expires_time = Date.now() + (expin || 0) * 1e3
+        }
 
-        const expin = Number(_.expires_in)
-        if (isNaN(expin)) throw new TypeError('Wrong `expires_in` value')
-
-        return ({ ..._, expires_time: (Number(_.expires_in) || 0) * 1e3 })
+        return ({ ..._, expires_time })
       })
       .then((_) => {
-        this.storage.setItem(id, JSON.stringify(_))
+        this.storage.setItem(label, JSON.stringify(_))
 
         return _
       })
@@ -125,12 +124,12 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
         return this.provider.account(this._requestLabel(), access_token)
       })
-      .then(req => this.fetchFn(() => req, this.fetchOpts))
+      .then((req: Request) => this.fetchFn(() => req, this.fetchOpts))
       .then(validResponse)
       .then(parsedResponse)
   }
 
-  accessToken (authKey: string = ''): Promise<*> {
+  accessToken (authKey: string = ''): Promise<TokenData> {
     const label = authKey || this.id
 
     return this.load(label)
@@ -143,7 +142,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
         return this.provider.refreshAccessToken(this._requestLabel(), refresh_token)
       })
-      .then((req: TRequest) => this.fetchFn(() => req, this.fetchOpts))
+      .then((req: Request) => this.fetchFn(() => req, this.fetchOpts))
       .then(validResponse)
       .then(parsedResponse)
       // eslint-disable-next-line promise/no-nesting
@@ -155,7 +154,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
         })))
   }
 
-  revokeRefreshToken (authKey: string = ''): Promise<*> {
+  revokeRefreshToken (authKey: string = ''): Promise<TokenData> {
     const label = authKey || this.id
 
     return this.load(label)
@@ -164,7 +163,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
         return this.provider.revokeRefreshToken(this._requestLabel(), refresh_token)
       })
-      .then((req: TRequest) => this.fetchFn(() => req, this.fetchOpts))
+      .then((req: Request) => this.fetchFn(() => req, this.fetchOpts))
       .then(validResponse)
       .then(parsedResponse)
       // eslint-disable-next-line promise/no-nesting

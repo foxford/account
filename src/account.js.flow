@@ -8,10 +8,14 @@ export type TokenData = {
   access_token: Token,
   refresh_token: Token,
   expires_in: number,
-  expires_time: number,
+  expires_time?: number,
 }
 
-export type TRefreshReponse = { access_token: Token, expires_in: number, token_type: string }
+export type TRefreshReponse = {
+  access_token: Token,
+  expires_in: number,
+  token_type: string
+}
 
 export type TRevokeResponse = { refresh_token: Token }
 
