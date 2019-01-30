@@ -11,40 +11,31 @@ import { name } from '../../package.json'
 import {
   label,
   audience,
+  tokenData,
   accountResponse,
   refreshResponse,
-  revokeResponse,
 } from '../response.mock'
-import storageMock from '../storage.mock'
 
 global.self = global
 // bind global to self for the fetch polyfill
 require('whatwg-fetch') // eslint-disable-line node/no-unpublished-require
 
-const isError = (error, msg = null) => tap.ok(error instanceof Error, msg)
-
-const isErrorSays = (error, errorShouldBe) => {
-  isError(error)
-  tap.equal(error.message, errorShouldBe)
-}
-
 const debug = Debug(`${name}:account`)
 
-const allErrors = list => list.map(next => tap.ok(next instanceof Error, false))
+function ClosureStorage (initialState) {
+  this.storage = initialState || {}
 
-const PromiseAllErrors = (fn, data) => new Promise((resolve, reject) => {
-  let errors = []
+  this.setItem = (key, value) => {
+    if (typeof value !== 'string') throw new TypeError('Wrong value format')
+    this.storage[key] = value
+  }
 
-  data.map(next => fn(next)
-    .then(res => reject(res))
-    .catch((error) => {
-      errors = errors.concat(error)
-      if (errors.length === data.length) resolve(errors)
-      if (!(error instanceof Error)) reject(new Error('Failed'))
-    }))
-})
+  this.getItem = key => this.storage[key]
 
-const storage = storageMock()
+  this.removeItem = (key) => {
+    delete this.storage[key]
+  }
+}
 
 const getAccount = (opts = {}, store) => {
   debug('Create account instance')
@@ -54,95 +45,29 @@ const getAccount = (opts = {}, store) => {
     ...(opts.account || {
       audience,
     }),
-  }, store || storage)
+  }, store || new ClosureStorage())
 }
 
-const authKey = 'oauth2.key'
-const params = {
-  client_token: '12345',
-  grant_type: 'client_credentials',
+const fetchMocks = ({
+  account,
+  label: id,
+  id: someid,
+  action: action = 'refresh',
+  response = refreshResponse,
+}) => {
+  fetchMock.mock(`${account.provider.authnEndpoint}/${id}`, {
+    body: accountResponse,
+    status: 200,
+  }, {
+    method: 'GET',
+  })
+
+  fetchMock.mock(`${account.provider.accountEndpoint}/${someid}/${action}`, {
+    body: response,
+  }, {
+    methods: 'POST',
+  })
 }
-
-// const fetchMocks = ({
-//   account,
-//   authKey: key,
-//   label: id,
-//   id: someid,
-//   action: action = 'refresh',
-//   response = refreshResponse,
-// }) => {
-//   fetchMock.mock(`${account.provider.endpoint}/accounts/${id}`, {
-//     body: accountResponse,
-//   }, {
-//     method: 'GET',
-//   })
-//   fetchMock.mock(`${account.provider.endpoint}/accounts/${someid}/${action}`, {
-//     body: response,
-//   }, {
-//     methods: 'POST',
-//   })
-// }
-
-// const fetchMocksOnRefresh = _ => fetchMocks(Object.assign({}, _, {
-//   action: 'refresh',
-//   response: refreshResponse,
-// }))
-
-// const fetchMocksOnRevoke = _ => fetchMocks(Object.assign({}, _, {
-//   action: 'revoke',
-//   response: revokeResponse,
-// }))
-//
-// const fetchMocksOnGet = ({
-//   account,
-//   authKey: key,
-//   label: id,
-//   response,
-// }) => {
-//   fetchMock.mock(`${account.provider.endpoint}/accounts/${id}`, {
-//     body: response,
-//   }, {
-//     method: 'GET',
-//   })
-// }
-
-// const fetchMocksOnSignIn = ({
-//   account,
-//   authKey: key,
-//   label: id,
-//   response,
-// }) => {
-//   fetchMock.mock(`${account.provider.endpoint}/accounts/${id}`, {
-//     body: response,
-//   }, {
-//     method: 'GET',
-//   })
-// }
-
-tap.test('Promise.all errors', (t) => {
-  t.test('Handle multiple negative requests', (test) => {
-    const negative = () => Promise.reject(new Error('Error'))
-
-    PromiseAllErrors(negative, [1, 2, 3])
-      .then(allErrors)
-      .then(test.end)
-      .catch(tap.error)
-  })
-
-  t.test('Can not handle any positive request', (test) => {
-    const maybePositive = value => value === 2
-      ? Promise.resolve(true)
-      : Promise.reject(new Error('Error'))
-
-    PromiseAllErrors(maybePositive, [1, 2, 3])
-      .catch(() => {
-        tap.ok('Failed')
-        test.end()
-      })
-  })
-
-  t.end()
-})
 
 tap.test('Account', (t) => {
   t.test('construct', (test) => {
@@ -178,21 +103,6 @@ tap.test('Account', (t) => {
 })
 
 tap.test('Account', (t) => {
-  function ClosureStorage (initialState) {
-    this.storage = initialState || {}
-
-    this.setItem = (key, value) => {
-      if (typeof value !== 'string') throw new TypeError('Wrong value format')
-      this.storage[key] = value
-    }
-
-    this.getItem = key => this.storage[key]
-
-    this.removeItem = (key) => {
-      delete this.storage[key]
-    }
-  }
-
   t.test('load void from empty storage', (test) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
@@ -203,6 +113,7 @@ tap.test('Account', (t) => {
         test.end()
       })
   })
+
   t.test('load void from not empty storage', (test) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
@@ -244,6 +155,7 @@ tap.test('Account', (t) => {
       })
       .catch(tap.error)
   })
+
   t.test('load failed as expected', (test) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
@@ -320,130 +232,28 @@ tap.test('Account', (t) => {
 })
 
 tap.test('Account', (t) => {
-  //
-  // t.test('`refresh` returns an error when pass negative values', (test) => {
-  //   const account = getAccount()
-  //
-  //   fetchMocksOnRefresh({
-  //     account, authKey, label, id: label,
-  //   })
-  //
-  //   const negativeValues = [undefined, null, '']
-  //
-  //   PromiseAllErrors(
-  //     val => account
-  //       .signIn({ auth_key: authKey, params })
-  //       .then(account.refresh(val)),
-  //     negativeValues
-  //   )
-  //     .then(allErrors)
-  //     .then(() => {
-  //       storage.removeItem(`account_${signInId}`)
-  //
-  //       return test.end()
-  //     })
-  //     .catch(tap.error)
-  // })
-  //
-  // t.test('`refresh` successful response', (test) => {
-  //   const account = getAccount()
-  //
-  //   fetchMocksOnRefresh({
-  //     account, authKey, label, id: label,
-  //   })
-  //
-  //   account.signIn({ auth_key: authKey, params })
-  //     .then(account.refresh(label))
-  //     .then((res) => {
-  //       tap.strictSame(JSON.stringify(res), JSON.stringify(refreshResponse))
-  //
-  //       storage.removeItem(`account_${signInId}`)
-  //
-  //       return test.end()
-  //     })
-  //     .catch(tap.error)
-  // })
-  //
-  // t.test('`refresh` аccess token from response equal to the access token from localStorage', (test) => {
-  //   const account = getAccount()
-  //
-  //   fetchMocksOnRefresh({
-  //     account, authKey, label, id: label,
-  //   })
-  //
-  //   account.signIn({ auth_key: authKey, params })
-  //     .then(account.refresh(label))
-  //     .then(() => {
-  //       const accessToken = JSON.parse(storage.getItem(`account_${signInId}`)).access_token
-  //
-  //       tap.strictSame(refreshResponse.access_token, accessToken)
-  //
-  //       storage.removeItem(`account_${signInId}`)
-  //
-  //       return test.end()
-  //     })
-  //     .catch(tap.error)
-  // })
-  //
-  // t.test('`revoke` returns error when pass negative values', (test) => {
-  //   const account = getAccount()
-  //
-  //   fetchMocksOnRevoke({
-  //     account, authKey, label, id: label,
-  //   })
-  //
-  //   const negativeValues = [undefined, null, '']
-  //
-  //   PromiseAllErrors(
-  //     val => account
-  //       .signIn({ auth_key: authKey, params })
-  //       .then(account.revoke(val)),
-  //     negativeValues
-  //   )
-  //     .then(allErrors)
-  //     .then(test.end)
-  //     .catch(tap.throws)
-  // })
-  //
-  // t.test('`revoke` successful response', (test) => {
-  //   const account = getAccount()
-  //
-  //   fetchMocksOnRevoke({
-  //     account, authKey, label, id: label,
-  //   })
-  //
-  //   account.signIn({ auth_key: authKey, params })
-  //     .then(account.revoke(label))
-  //     .then((res) => {
-  //       tap.strictSame(JSON.stringify(res), JSON.stringify(revokeResponse))
-  //
-  //       storage.removeItem(`account_${signInId}`)
-  //
-  //       return test.end()
-  //     })
-  //     .catch(tap.error)
-  // })
-  //
-  // t.test('`revoke` refresh token from response equal refresh token from localStorage', (test) => {
-  //   const account = getAccount()
-  //
-  //   fetchMocksOnRevoke({
-  //     account, authKey, label, id: label,
-  //   })
-  //
-  //   account.signIn({ auth_key: authKey, params })
-  //     .then(account.revoke(label))
-  //     .then(() => {
-  //       const refreshToken = JSON.parse(storage.getItem(`account_${signInId}`)).refresh_token
-  //
-  //       tap.strictSame(revokeResponse.refresh_token, refreshToken)
-  //
-  //       storage.removeItem(`account_${signInId}`)
-  //
-  //       return test.end()
-  //     })
-  //     .catch(tap.error)
-  // })
+  t.test('`tokenData` successful response', (test) => {
+    const strg = new ClosureStorage()
+    const account = getAccount({
+      account: {
+        audience,
+        requestMode: 'label',
+      },
+    }, strg)
+
+    fetchMocks({
+      account, label, id: label,
+    })
+
+    account.store(tokenData)
+      .then(_ => account.tokenData())
+      .then((_) => {
+        tap.same(JSON.stringify(_), account.storage.getItem(account.id))
+
+        return test.end()
+      })
+      .catch(tap.error)
+  })
 
   t.end()
 })
