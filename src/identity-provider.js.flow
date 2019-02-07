@@ -1,0 +1,17 @@
+/** @flow strict-local */
+
+export type Label = string;
+
+export type Token = string;
+
+export type EndpointConfig = {
+  endpoint: string,
+  accountEndpoint?: string | () => string,
+  authnEndpoint?: string | () => string
+}
+
+export interface Provider {
+  refreshAccessToken(a: Label, b: Token): Request;
+  revokeRefreshToken(a: Label, b: Token): Request;
+  account(a: Label, b: Token): Request;
+}

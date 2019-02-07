@@ -1,461 +1,185 @@
+/** @flow */
+import type { IdP } from './idp'
+import type { EndpointConfig } from './identity-provider.js.flow'
+import type { IAbstractStorage as AbstractStorage } from './storage.js.flow'
+import type { AccountConfig, TokenData, TRefreshReponse, TRevokeResponse } from './account.js.flow'
+import { fetchRetry, isExpired, validResponse, parsedResponse, parse } from './utils/index'
+
 const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
 const LEEWAY = 3000
-const MY_ACCOUNT_ID = 'me'
 
-class Account {
-  static get version () {
-    return __VERSION__
-  }
+export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
+  fetchFn: Function;
 
-  constructor (config) {
+  fetchOpts: Object;
+
+  id: string;
+
+  label: string;
+
+  leeway: number;
+
+  requestMode: 'label' | 'id';
+
+  provider: IdP<EndpointConfig>;
+
+  retries: number;
+
+  retryDelay: number;
+
+  storage: Storage;
+
+  constructor (config: Config, storage: Storage) {
     if (!config || !config.provider) throw new TypeError('Missing `provider` in config')
 
+    if (!storage) throw new TypeError('Storage is not defined')
+
+    this.storage = storage
     this.provider = config.provider
-    this.retries = config.retries || MAX_AJAX_RETRY
-    this.retryDelay = config.retryDelay || AJAX_RETRY_DELAY
+    this.fetchFn = fetchRetry
+    this.fetchOpts = {
+      delay: config.retryDelay || AJAX_RETRY_DELAY,
+      retries: config.retries || MAX_AJAX_RETRY,
+    }
     this.leeway = config.leeway || LEEWAY
-    this.myAccountId = config.myAccountId || MY_ACCOUNT_ID
-    this.id = config.id || null
+    this.requestMode = config.requestMode || 'id'
+
+    const { id, label } = this._createId(config.audience, config.label)
+
+    this.label = label
+    this.id = id
+
+    if (!this.id) throw new TypeError('Failed to configure account. Id is not present')
   }
 
-  /**
-   * Get token data
-   */
-  _getTokenData () {
-    let item
-    try {
-      item = window.localStorage.getItem(`account_${this.id}`)
-    } catch (err) { throw new Error(`Missing account id: ${this.id}`) }
-    try {
-      return JSON.parse(item)
-    } catch (err) { throw new Error('Error occured when parse from account data') }
-  }
+  // eslint-disable-next-line class-methods-use-this
+  _createId (audience: string, label: string = 'me', separator: string = '.'): { label: string, id: string } {
+    if (!audience) throw new TypeError('`audience` is absent')
 
-  /**
-   * Check token expire
-   */
-  _isTokenExpired () {
-    const tokenData = this._getTokenData()
-
-    return !tokenData || !tokenData.expires_time ||
-    Date.now() > (Number(tokenData.expires_time) - this.leeway)
-  }
-
-  /**
-   * Get access token
-   */
-  signIn (options) {
-    const fetchToken = (authKey, params) => {
-      if (this._isTokenExpired() || !this.id) {
-        return this._fetchToken(authKey, params)
-      } else {
-        return Promise.resolve(this._getTokenData())
-      }
-    }
-    const refreshToken = (refreshToken) => {
-      if (this._isTokenExpired() || !this.id) {
-        return this._fetchRefreshToken(this.myAccountId, refreshToken)
-      } else {
-        return Promise.resolve(this._getTokenData())
-      }
-    }
-    const getTokenDataById = () => {
-      if (this._isTokenExpired()) {
-        return this._fetchRefreshToken(this.myAccountId, this._getTokenData().refresh_token)
-      } else {
-        return Promise.resolve(this._getTokenData())
-      }
-    }
-
-    if (
-      options &&
-      options.auth_key &&
-      options.params &&
-      options.params.client_token &&
-      options.params.grant_type
-    ) {
-      return fetchToken(options.auth_key, options.params)
-    } else if (options && options.data) {
-      this._saveTokenData(options.data)
-
-      return getTokenDataById()
-    } else if (options && options.refresh_token) {
-      return refreshToken(options.refresh_token)
-    } else if (!options && this.id && this._getTokenData()) {
-      return getTokenDataById()
-    } else {
-      return Promise.reject(new TypeError('Missing required options:  pair `authKey`, `params` or `refresh_token` or missing token data'))
+    return {
+      label,
+      id: `${label}${separator}${audience}`,
     }
   }
 
-  /**
-   * Refresh access token
-   * @param {*} id
-   */
-  refresh (id) {
-    return data => {
-      const tokenData = this._getTokenData()
-
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.refresh_token) throw new TypeError(`Missing 'refresh_token' in account data`)
-
-      return this._fetchRefreshToken(id, tokenData.refresh_token)
-    }
+  _requestLabel (): string {
+    return this.requestMode === 'label' ? this.label : this.id
   }
 
-  /**
-   * Revoke refresh token
-   * @param {*} id
-   */
-  revoke (id) {
-    return data => {
-      const tokenData = this._getTokenData()
+  load (storageLabel: string = ''): Promise<TokenData> {
+    const label = storageLabel || this.id
+    if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.refresh_token) throw new TypeError(`Missing 'refresh_token' in account data`)
+    return Promise.resolve(() => this.storage.getItem(label))
+      .then((fn) => {
+        const value = fn()
+        if (!value) throw new TypeError('Can not load data')
 
-      return this._fetchRetry(
-        () => this.provider.revokeRefreshTokenRequest(id, tokenData.refresh_token)
-      )
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-        .then(data => {
-          this._saveTokenData(data)
-          return data
-        })
-    }
-  }
-
-  /**
-   * Link client's accounts
-   * @param {*} authKey
-   * @param {*} params
-   */
-  link (authKey, params) {
-    return data => {
-      const tokenData = this._getTokenData()
-
-      if (!authKey) throw new TypeError(`Incorrect parameters 'authKey': ${authKey}`)
-      if (!params) throw new TypeError(`Incorrect parameters 'params': ${params}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
-
-      return this._fetchRetry(
-        () => this.provider.linkRequest(authKey, params, tokenData.access_token)
-      )
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-        .then(data => data)
-    }
-  }
-
-  /**
-   * Get linked accounts
-   * @param {*} id
-   */
-  auth (id) {
-    return data => {
-      const tokenData = this._getTokenData()
-
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
-
-      return this._fetchRetry(
-        () => this.provider.authRequest(id, tokenData.access_token)
-      )
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-        .then(data => data)
-    }
-  }
-
-  /**
-   * Delete account link
-   * @param {*} id
-   * @param {*} authKey
-   */
-  unlink (id, authKey) {
-    return data => {
-      const tokenData = this._getTokenData()
-
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
-
-      return this._fetchRetry(
-        () => this.provider.unlinkRequest(id, authKey, tokenData.access_token)
-      )
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-        .then(data => data)
-    }
-  }
-
-  /**
-   * Get account info
-   * @param {*} id
-   */
-  get (id) {
-    return data => {
-      const tokenData = this._getTokenData()
-
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
-
-      return this._fetchRetry(
-        () => this.provider.accountRequest(id, tokenData.access_token)
-      )
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-        .then(data => data)
-    }
-  }
-
-  /**
-   * Remove account
-   */
-  remove (id) {
-    return data => {
-      const tokenData = this._getTokenData()
-
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
-
-      return this._fetchRetry(
-        () => this.provider.removeAccountRequest(id, tokenData.access_token)
-      )
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-        .then(data => {
-          this.signOut()
-          return data
-        })
-    }
-  }
-
-  /**
-   * Check is account enabled
-   * @param {*} id
-   */
-  isEnabled (id) {
-    return data => {
-      const tokenData = this._getTokenData()
-
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
-
-      return this._fetchRetry(
-        () => this.provider.isEnabledRequest(id, tokenData.access_token)
-      )
-        .then(this._checkStatus)
-    }
-  }
-
-  /**
-   * Enable account
-   * @param {*} id
-   */
-  enable (id) {
-    return data => {
-      const tokenData = this._getTokenData()
-
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
-
-      return this._fetchRetry(
-        () => this.provider.enableRequest(id, tokenData.access_token)
-      )
-        .then(this._checkStatus)
-    }
-  }
-
-  /**
-   * Disable account
-   * @param {*} id
-   */
-  disable (id) {
-    return data => {
-      const tokenData = this._getTokenData()
-
-      if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-      if (!tokenData && !tokenData.access_token) throw new TypeError(`Missing 'access_token' in account data`)
-
-      return this._fetchRetry(
-        () => this.provider.disableRequest(id, tokenData.access_token)
-      )
-        .then(this._checkStatus)
-    }
-  }
-
-  /**
-   * Delete access token
-   */
-  signOut () {
-    if (this.id) {
-      window.localStorage.removeItem(`account_${this.id}`)
-      this.id = null
-      return Promise.resolve()
-    } else {
-      throw new ReferenceError(`Missing account id: ${this.id}`)
-    }
-  }
-
-  /**
-   * Save token data
-   * @param {*} data
-   */
-  _saveTokenData (data) {
-    if (!this.id) throw new TypeError(`Missing account id: ${this.id}`)
-
-    const tokenData = this._getTokenData() || {}
-
-    if (data && data.access_token) {
-      tokenData.access_token = data.access_token
-    }
-    if (data && data.refresh_token) {
-      tokenData.refresh_token = data.refresh_token
-    }
-    if (data && data.expires_in) {
-      tokenData.expires_in = data.expires_in
-      tokenData.expires_time = Date.now() + (data.expires_in * 1000)
-    }
-
-    window.localStorage.setItem(`account_${this.id}`, JSON.stringify(tokenData))
-  }
-
-  /**
-   * Fetch access token
-   */
-  _fetchToken (authKey, params) {
-    if (!authKey) throw new TypeError(`Incorrect parameter 'authKey': ${authKey}`)
-    if (!params) throw new TypeError(`Incorrect parameter 'params': ${params}`)
-
-    const fetchAccount = (data) => {
-      return this._fetchRetry(
-        () => this.provider.accountRequest(this.myAccountId, data.access_token)
-      )
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-        .then(res => {
-          this.id = res.id
-          this._saveTokenData(data)
-          return data
-        })
-    }
-
-    return this._fetchRetry(
-      () => this.provider.accessTokenRequest(authKey, params)
-    )
-      .then(this._checkStatus)
-      .then(this._parseJSON)
-      .then(data => {
-        if (!this.id) {
-          return fetchAccount(data)
-        } else {
-          this._saveTokenData(data)
-          return data
-        }
+        return parse(value)
       })
   }
 
-  /**
-   * Fetch refresh token
-   */
-  _fetchRefreshToken (id, refreshToken) {
-    if (!id) throw new TypeError(`Incorrect parameter 'id': ${id}`)
-    if (!refreshToken) throw new TypeError(`Incorrect parameter 'refreshToken': ${refreshToken}`)
+  remove (storageLabel: string = ''): Promise<TokenData> {
+    const label = storageLabel || this.id
+    if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
-    const saveData = (data) => {
-      if (!data.refresh_token) {
-        const newData = Object.create(data)
-        newData.refresh_token = refreshToken
-        this._saveTokenData(newData)
-      } else {
-        this._saveTokenData(data)
-      }
-    }
-    const fetchAccount = (data) => {
-      return this._fetchRetry(
-        () => this.provider.accountRequest(this.myAccountId, data.access_token)
-      )
-        .then(this._checkStatus)
-        .then(this._parseJSON)
-        .then(res => {
-          this.id = res.id
-          saveData(data)
-          return data
-        })
-    }
+    return this.load(label)
+      .then((tokenData) => {
+        this.storage.removeItem(label)
 
-    return this._fetchRetry(
-      () => this.provider.refreshAccessTokenRequest(id, refreshToken)
-    )
-      .then(this._checkStatus)
-      .then(this._parseJSON)
-      .then(data => {
-        if (!this.id) {
-          return fetchAccount(data)
-        } else {
-          saveData(data)
-          return data
-        }
+        return tokenData
       })
   }
 
-  /**
-   * Fetch with retry logic
-   * @param {*} requestFn
-   */
-  _fetchRetry (requestFn) {
-    if (!requestFn) throw new TypeError(`Missing 'requestFn': ${requestFn}`)
+  store (data: TokenData, storageLabel: string = ''): Promise<TokenData> {
+    const label = storageLabel || this.id
+    if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
-    return new Promise((resolve, reject) => {
-      const errors = []
-      const wrappedFetch = (n) => {
-        if (n < 1) {
-          reject(errors)
-        } else {
-          fetch(requestFn())
-            .then(response => resolve(response))
-            .catch(error => {
-              errors.push(error)
-              setTimeout(() => {
-                wrappedFetch(--n)
-              }, this.retryDelay)
-            })
+    return Promise.resolve(data)
+      .then((_) => {
+        let expires_time: number = 0
+
+        if (_.expires_in) {
+          const expin = Number(_.expires_in)
+          if (isNaN(expin)) throw new TypeError('Wrong `expires_in` value')
+          expires_time = Date.now() + (expin || 0) * 1e3
         }
-      }
 
-      wrappedFetch(this.retries)
-    })
+        return ({ ..._, expires_time })
+      })
+      .then((_) => {
+        this.storage.setItem(label, JSON.stringify(_))
+
+        return _
+      })
   }
 
-  /**
-   * Check http status and retrurn response or response with error
-   * @param {*} response
-   */
-  _checkStatus (response) {
-    if (!response) throw new TypeError(`Missing 'response': ${response}`)
+  account (storageLabel: string = ''): Promise<TokenData> {
+    const label = storageLabel || this.id
 
-    if (response.status && response.status >= 200 && response.status < 300) {
-      return response
-    } else {
-      const error = new Error(response.statusText)
+    const fn = this.provider.account
 
-      error.response = response
-      throw error
-    }
+    return this.tokenData(label)
+      .then((data: TokenData) => {
+        const { access_token } = data
+
+        return [this._requestLabel(), access_token]
+      })
+      .then(req => this.fetchFn(() => fn.call(this.provider, ...req), this.fetchOpts))
+      .then(validResponse)
+      .then(parsedResponse)
   }
 
-  /**
-   * Parse response to JSON
-   * @param {*} response
-   */
-  _parseJSON (response) {
-    if (!response) throw new TypeError(`Missing 'response': ${response}`)
+  tokenData (storageLabel: string = ''): Promise<TokenData> {
+    const label = storageLabel || this.id
 
-    return response.json()
+    const fn = this.provider.refreshAccessToken
+
+    return this.load(label)
+      .then((maybeValidTokens: TokenData) => {
+        const expired = isExpired(maybeValidTokens, this.leeway)
+
+        if (!expired) return maybeValidTokens
+
+        const { refresh_token } = maybeValidTokens
+
+        // eslint-disable-next-line promise/no-nesting
+        return Promise.resolve([this._requestLabel(), refresh_token])
+          .then(req => this.fetchFn(() => fn.call(this.provider, ...req), this.fetchOpts))
+          .then(validResponse)
+          .then(parsedResponse)
+          // eslint-disable-next-line promise/no-nesting
+          .then((_: TRefreshReponse) => this.load(label)
+            .then(old => this.store({
+              ...old,
+              access_token: _.access_token,
+              expires_in: _.expires_in,
+            })))
+      })
+  }
+
+  revokeRefreshToken (storageLabel: string = ''): Promise<TokenData> {
+    const label = storageLabel || this.id
+
+    const fn = this.provider.revokeRefreshToken
+
+    return this.load(label)
+      .then((maybeToken) => {
+        const { refresh_token } = maybeToken
+
+        return [this._requestLabel(), refresh_token]
+      })
+      .then(req => this.fetchFn(() => fn.call(this.provider, ...req), this.fetchOpts))
+      .then(validResponse)
+      .then(parsedResponse)
+      // eslint-disable-next-line promise/no-nesting
+      .then((_: TRevokeResponse) => this.load(label)
+        .then(old => this.store({
+          ...old,
+          refresh_token: _.refresh_token,
+        })))
   }
 }
 
-export default Account
+export { Account }

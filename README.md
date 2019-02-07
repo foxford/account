@@ -1,104 +1,63 @@
-# account
-account client
+Account client
 
-# How to use
-## Import module
-### Use es6 import
+## How to use
+
+### Import module
+
 ```javascript
-import Account, { IdP } from 'account'
+import Account, { IdP as Provider } from 'account'
 ```
+
 ### Initialize
+
 ```javascript
 const config = {
-  provider: new IdP({
-    endpoint: '...host...'
-  }),  // you can write your own provider or use default IdP provider
-  id: '..id...' // optional parameter (if you already know `id` you pass in `config` to avoid repeated request of token)
+  provider: new Provider({
+    endpoint: 'http://domain.name'
+  }),
+  // You can write your own provider or use default IdP provider
 }
-const account = new Account(config)
+const account = new Account(config, window.localStorage)
+// You can bypass any storage provider which implements [Provider](./src/identity-provider.js.flow#14) interface
 ```
-### Get access token
+
+#### Request access token
+
+- `access_token` will be automatically refreshed if applicable.
+
 ```javascript
-const authKey = 'oauth2.key'
-const params = {
-  client_token: '...JWT TOKEN...',
-  grant_type: 'client_credentials'
-}
-const accountId = '..id...'
-account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
-  .then((data) => {
-    // {
-    //   access_token: '...',
-    //   expires_in: 86400,
-    //   refresh_token: '...',
-    //   token_type: 'Bearer'
-    // }
-  })
+account.tokenData()
+  .then((_: /*: TokenData */) => { /* do something */ })
 ```
-### Refresh access token
+
+#### Revoke refresh token
+
 ```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
-  .then(account.refresh(id)) // id or 'me'
-  .then((data) => {
-    // {
-    //   access_token: '...',
-    //   expires_in: 86400,
-    //   token_type: 'Bearer' 
-    // }
-  })
+account.revokeRefreshToken()
+  .then((_: /*: TokenData */) => { /* do something */ })
 ```
-### Revoke refresh token
+
+#### Store token
+
 ```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
-  .then(account.revoke(id)) // id or 'me'
-  .then((data) => {
-    // {
-    //   refresh_token: '...'
-    // }
-  })
+const tokenData /*: TokenData */ = {}
+account
+  .store(tokenData)
+  .then((_ /*: TokenData */) => { /* do something */ })
 ```
-### Link client's accounts
+
+#### Load token
+
 ```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
-  .then(account.link(authKey, params))
-  .then((data) => {
-    // {
-    //   id: '1'
-    // }
-  })
+account
+  .load()
+  .then((_ /*: TokenData */) => { /* do something */ })
 ```
-### Get linked accounts
+
+#### Remove token
+
 ```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
-  .then(account.auth(id)) // id or 'me'
-  .then((data) => {
-    // [{
-    //   id: 'oauth.key'
-    // }]
-  })
-```
-### Delete account link
-```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
-  .then(account.unlink(id, authKey)) // id or 'me'
-  .then((data) => {
-    // {
-    //   "id": "oauth2.key.1"
-    // }
-  })
-```
-### Get account info
-```javascript
-account.signIn(/* { auth_key: authKey, params: params } || { refresh_token: '...JWT TOKEN...' } */)
-  .then(account.get(id)) // id or 'me'
-  .then((data) => {
-    // {
-    //   id: ''
-    // }
-  })
-```
-### Delete access token
-```javascript
-account.signOut()
-  .then(() => { /* do something */ })
+account
+  .remove()
+  .then((_ /*: TokenData */) => { /* do something */ })
 ```

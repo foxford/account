@@ -1,0 +1,32 @@
+language: node_js
+node_js: lts/*
+cache:
+  directories:
+  - "${TRAVIS_BUILD_DIR}/node_modules"
+git:
+  depth: 1
+notifications:
+  slack:
+    secure: zOKiW9yvy7pVXTDvUELyOzXkPT3hCPpJo1QdDLoWlhynkYz9OrSJldsbaN/yResqWzJSgv8D1cO5WcbLkd/OvGYrXiebPFiBLG+rA6tWIJWVyrzGMFHvOkHE136MbTXtMO5HqFteSKjAqc2SFQ8l4rquC3GCAYgMy7HWDSuBV0ewJv6LQImmuQH1Ejw+9ZSXlxNVTMg51dQ9JYxsKcddHH9THBlz0d2vl1G5gz/KjWDsGo0a8AgbzuXVph/yQx5MrvTVIx9dVcVkptIjXWJ7WqjRjVH2gCw2SnV6PfLVKywySMMe7nn+ZRBQ1X/urnMU15Q20c5hWHexMrqdC4fXGJgtdeZ4yWYDTw6sMBMfN0kZOg5rpuOYE0VHsYH5sfpto+tl0LHFI1QbaRq/7b+ha/M/F2uOlrcyjJaBee78VUnDrbHheGvEe+rLJSW69KrKS/DOsvtREbQxfpRZgHiLScXMVJb+3fF+aBQXlWbG3q1V363wUIhJSopo+hElfL4DQouxITPRisaKCLLXd+vqQmpegWNlzM9YKCvTSmGXgMPMeZVHp4opkvLSdRz+cj78pY1y/z0eY66tO5x1XWtrK34+Em7qbtzHvlu6JK+98Q7+x1NY5QibrRHrdbOVjkJpl76+xqg8/ZHtR4SDsqb5o4poMyIo+99CgPL04i3C9ng=
+env:
+- NPM_KEY=${NPM_API_TOKEN}
+jobs:
+  include:
+  - stage: commit
+    script:
+    - |
+      npm test
+      npm run coverage
+  - stage: release
+    provider: npm
+    skip_cleanup: true
+    before_install:
+    - printf "${NPM_SCOPE}:registry=https://registry.npmjs.org/\n//registry.npmjs.org/:_authToken=${NPM_KEY}" > ${HOME}/.npmrc
+    script:
+    - if [[ ! -z ${TRAVIS_TAG} ]]; then npm dist-tag add ${TRAVIS_REPO_SLUG}@latest ${TRAVIS_TAG}; else npm publish --access=public --tag=latest; fi
+stages:
+- name: warmup
+- name: commit
+- name: test
+- name: release
+  if: "(branch = master AND type = push) OR env(TRAVIS_TAG) IS present"

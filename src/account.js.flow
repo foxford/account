@@ -1,0 +1,30 @@
+/** @flow strict-local */
+import type { IdP } from './idp'
+import type { EndpointConfig } from './identity-provider.js.flow'
+
+type Token = string
+
+export type TokenData = {
+  access_token: Token,
+  refresh_token: Token,
+  expires_in: number,
+  expires_time?: number,
+}
+
+export type TRefreshReponse = {
+  access_token: Token,
+  expires_in: number,
+  token_type: string
+}
+
+export type TRevokeResponse = { refresh_token: Token }
+
+export type AccountConfig = {
+  audience: string,
+  label: string,
+  leeway: number,
+  requestMode?: 'label' | 'id',
+  provider: IdP<EndpointConfig>,
+  retries: number,
+  retryDelay: number,
+}

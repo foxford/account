@@ -1,36 +1,75 @@
 {
-  "name": "account",
-  "version": "1.1.0",
-  "main": "dist/account.js",
-  "repository": "https://github.com/netology-group/account.git",
-  "author": "Elay <e.tolchennikov@netology-group.ru>",
-  "license": "MIT",
-  "scripts": {
-    "start": "npm run test && npm run build",
-    "test": "./node_modules/.bin/mocha",
-    "build": "./node_modules/.bin/webpack"
+  "name": "@netology-group/account",
+  "version": "2.0.4",
+  "description": "account client",
+  "keywords": [
+    "authentication",
+    "jwt"
+  ],
+  "homepage": "https://github.com/netology-group/account",
+  "bugs": {
+    "url": "https://github.com/netology-group/account/issues"
   },
-  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/netology-group/account.git"
+  },
+  "license": "MIT",
+  "author": "OLC Netology group LLC",
+  "contributors": [
+    "Elay <e.tolchennikov@netology-group.ru>"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "dist/account.js",
+  "directories": {
+    "lib": "src",
+    "test": "test"
+  },
+  "scripts": {
+    "build": "cross-env NODE_ENV=production webpack -p",
+    "precoverage": "rm -rf .nyc_output coverage && mkdir -p coverage .nyc_output",
+    "coverage": "tap \"test/**/*.test.js\" --nyc-arg=--require=./test/babel-register.js --cov",
+    "postcoverage": "tap --coverage-report=text-lcov > coverage/coverage.lcov && codecov",
+    "flow": "flow check",
+    "lint": "eslint src",
+    "prepublishOnly": "npm run build",
+    "start": "npm run test && npm run build",
+    "tap": "tap --node-arg=--require=./test/babel-register.js",
+    "tapas": "npm run tap \"test/**/*.test.js\"",
+    "test": "npm run lint && npm run tapas && npm run flow"
+  },
+  "dependencies": {
+    "debug": "^4.1.1"
+  },
   "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-loader": "^7.1.2",
-    "babel-preset-env": "^1.6.0",
-    "babel-preset-es2015": "^6.24.1",
-    "babel-preset-stage-0": "^6.24.1",
-    "babel-register": "^6.26.0",
-    "es6-promise": "^4.1.1",
-    "eslint": "^4.5.0",
-    "eslint-config-standard": "^10.2.1",
-    "eslint-loader": "^1.9.0",
-    "eslint-plugin-import": "^2.7.0",
-    "eslint-plugin-node": "^5.1.1",
-    "eslint-plugin-promise": "^3.5.0",
-    "eslint-plugin-standard": "^3.0.1",
+    "@babel/cli": "^7.2.3",
+    "@babel/plugin-proposal-class-properties": "^7.3.0",
+    "@babel/preset-env": "^7.3.1",
+    "@babel/preset-flow": "^7.0.0",
+    "@babel/register": "^7.0.0",
+    "babel-eslint": "^10.0.1",
+    "babel-loader": "^8.0.5",
+    "eslint": "^5.6.1",
+    "eslint-config-adequate": "^1.1.4",
+    "eslint-plugin-flowtype": "^3.2.1",
+    "eslint-plugin-flowtype-errors": "^3.6.0",
     "fetch-mock": "^5.12.2",
+    "flow-bin": "^0.91.0",
+    "flow-typed": "^2.5.1",
     "isomorphic-fetch": "^2.2.1",
-    "jsdom": "11.2.0",
-    "jsdom-global": "3.0.2",
-    "mocha": "^3.5.0",
-    "webpack": "^3.5.5"
+    "pino": "^4.10.3",
+    "rimraf": "^2.6.2",
+    "tap": "^12.4.0",
+    "webpack": "^3.11.0",
+    "whatwg-fetch": "^3.0.0"
+  },
+  "optionalDependencies": {
+    "@babel/core": "^7.2.2",
+    "acorn": "^6.0.5",
+    "codecov": "^3.1.0",
+    "cross-env": "^5.2.0",
+    "estraverse": "^4.2.0"
   }
 }
