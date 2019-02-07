@@ -21,12 +21,12 @@ jobs:
     provider: npm
     skip_cleanup: true
     before_install:
-    - printf "${NPM_SCOPE}:registry=https://registry.npmjs.org/\n//registry.npmjs.org/:_authToken=${NPM_KEY}" > ${HOME}/.npmrc
+    - printf "${NPM_SCOPE}:registry=https://registry.npmjs.org/\n//registry.npmjs.org/:_authToken=${NPM_KEY}" >> ${TRAVIS_BUILD_DIR}/.npmrc
     script:
-    - if [[ ! -z ${TRAVIS_TAG} ]]; then npm dist-tag add ${TRAVIS_REPO_SLUG}@latest ${TRAVIS_TAG}; else npm publish --access=public --tag=latest; fi
+    - if [[ ! -z ${TRAVIS_TAG} ]]; then npm dist-tag add ${TRAVIS_REPO_SLUG} ${TRAVIS_TAG}; else npm publish --access=public --tag=latest; fi
 stages:
 - name: warmup
 - name: commit
 - name: test
 - name: release
-  if: "(branch = master AND type = push) OR env(TRAVIS_TAG) IS present"
+  # if: "(branch = master AND type = push) OR env(TRAVIS_TAG) IS present"
