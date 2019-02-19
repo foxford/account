@@ -30,13 +30,13 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
   storage: Storage;
 
-  constructor (config: Config, storage: Storage) {
-    if (!config || !config.provider) throw new TypeError('Missing `provider` in config')
-
+  constructor (config: Config, provider: IdP<EndpointConfig>, storage: Storage) {
+    if (!config) throw new TypeError('Missing `config`')
+    if (!provider) throw new TypeError('Provider is not defined')
     if (!storage) throw new TypeError('Storage is not defined')
 
     this.storage = storage
-    this.provider = config.provider
+    this.provider = provider
     this.fetchFn = fetchRetry
     this.fetchOpts = {
       delay: config.retryDelay || AJAX_RETRY_DELAY,
