@@ -98,7 +98,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
     return Promise.resolve(data)
       .then((_) => {
-        let expires_time: number = 0
+        let expires_time: number = 0; // eslint-disable-line semi
 
         if (_.expires_in) {
           const expin = Number(_.expires_in)
@@ -106,12 +106,11 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
           expires_time = Date.now() + (expin || 0) * 1e3
         }
 
-        return ({ ..._, expires_time })
-      })
-      .then((_) => {
-        this.storage.setItem(label, JSON.stringify(_))
+        const token = { ..._, expires_time }
 
-        return _
+        this.storage.setItem(label, JSON.stringify(token))
+
+        return token
       })
   }
 
