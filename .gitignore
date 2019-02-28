@@ -119,6 +119,7 @@ data/
 /build
 
 # Bundle
-dist/
+/dist
+/es
 
 .nyc_output

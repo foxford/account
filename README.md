@@ -5,7 +5,7 @@ Account client
 ### Import module
 
 ```javascript
-import Account, { IdP as Provider } from 'account'
+import { Account, IdP as Provider } from 'account'
 ```
 
 ### Initialize
