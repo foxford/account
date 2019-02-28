@@ -1,5 +1,9 @@
 Account client
 
+[![](https://data.jsdelivr.com/v1/package/npm/@netology-group/account/badge?style=rounded)](https://www.jsdelivr.com/package/npm/@netology-group/account)
+![](https://img.shields.io/npm/dt/@netology-group/account.svg)
+![](https://img.shields.io/npm/dm/@netology-group/account.svg)
+
 ## How to use
 
 ### Import module
@@ -11,7 +15,9 @@ import { Account, IdP as Provider } from 'account'
 ### Initialize
 
 ```javascript
-const config = {}
+const config = {
+  label: 'me'
+}
 
 const provider = new Provider({
   endpoint: 'http://domain.name'

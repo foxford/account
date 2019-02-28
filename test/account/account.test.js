@@ -9,7 +9,6 @@ import { IdP } from '../../src/idp'
 import { name } from '../../package.json'
 
 import {
-  label,
   audience,
   tokenData,
   accountResponse,
@@ -40,12 +39,15 @@ function ClosureStorage (initialState) {
 const getAccount = (opts = {}, store) => {
   debug('Create account instance')
 
+  const options = (opts.account || {
+    audience,
+    requestMode: 'me',
+  })
+
+  debug('Initialize account with options:', options)
+
   return new Account(
-    {
-      ...(opts.account || {
-        audience,
-      }),
-    },
+    options,
     new IdP(opts.provider || { endpoint: 'https://mock-host' }),
     store || new ClosureStorage()
   )
@@ -54,7 +56,6 @@ const getAccount = (opts = {}, store) => {
 const fetchMocks = ({
   account,
   label: id,
-  id: someid,
   action: action = 'refresh',
   response = refreshResponse,
 }) => {
@@ -65,7 +66,7 @@ const fetchMocks = ({
     method: 'GET',
   })
 
-  fetchMock.mock(`${account.provider.accountEndpoint}/${someid}/${action}`, {
+  fetchMock.mock(`${account.provider.accountEndpoint}/${id}/${action}`, {
     body: response,
   }, {
     methods: 'POST',
@@ -77,27 +78,68 @@ tap.test('Account', (t) => {
     let account = getAccount()
 
     tap.not(account, undefined)
-    tap.same(account.id, `me.${audience}`)
-    tap.same(account.label, 'me')
+    tap.same(account.id, 'me')
+    tap.same(account.label, `me.${audience}`)
+    tap.same(account.requestMode, 'me')
 
     account = getAccount({
       account: {
         label: 'you',
+        requestMode: 'label',
         audience,
       },
     })
 
     tap.not(account, undefined)
-    tap.same(account.id, `you.${audience}`)
-    tap.same(account.label, 'you')
+    tap.same(account.id, 'you')
+    tap.same(account.label, `you.${audience}`)
+    tap.same(account.requestMode, 'label')
+
+    account = getAccount({
+      account: {
+        label: '12345',
+        requestMode: 'id',
+        audience,
+      },
+    })
+
+    tap.not(account, undefined)
+    tap.same(account.id, '12345')
+    tap.same(account.label, `12345.${audience}`)
+    tap.same(account.requestMode, 'id')
+
+    tap.throws(() => {
+      getAccount({
+        account: {},
+      })
+    }, { message: '`audience` is absent' })
 
     tap.throws(() => {
       getAccount({
         account: {
           label: 'you',
+          requestMode: 'label',
         },
       })
     }, { message: '`audience` is absent' })
+
+    tap.throws(() => {
+      getAccount({
+        account: {
+          requestMode: 'label',
+          audience,
+        },
+      })
+    }, { message: '`label` is absent' })
+
+    tap.throws(() => {
+      getAccount({
+        account: {
+          requestMode: 'id',
+          audience,
+        },
+      })
+    }, { message: '`label` is absent' })
 
     test.end()
   })
@@ -121,11 +163,11 @@ tap.test('Account', (t) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
-    strg.setItem(acc.id, '{"a":123}')
+    strg.setItem(acc.label, '{"a":123}')
 
     acc.load()
-      .then((tokenData) => {
-        tap.same(tokenData, { a: 123 })
+      .then((data) => {
+        tap.same(data, { a: 123 })
 
         return test.end()
       })
@@ -147,12 +189,12 @@ tap.test('Account', (t) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
-    strg.setItem(acc.id, '{"a":123}')
+    strg.setItem(acc.label, '{"a":123}')
 
     acc.remove()
-      .then((tokenData) => {
-        tap.same(tokenData, { a: 123 })
-        tap.same(strg.getItem(acc.id, undefined))
+      .then((data) => {
+        tap.same(data, { a: 123 })
+        tap.same(strg.getItem(acc.label, undefined))
 
         return test.end()
       })
@@ -163,7 +205,7 @@ tap.test('Account', (t) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
-    strg.setItem(acc.id, '"')
+    strg.setItem(acc.label, '"')
 
     tap.throws(acc.load)
 
@@ -174,7 +216,7 @@ tap.test('Account', (t) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
-    strg.setItem(acc.id, '{"a":"123"}')
+    strg.setItem(acc.label, '{"a":"123"}')
 
     acc.load()
       .then((data) => {
@@ -240,18 +282,19 @@ tap.test('Account', (t) => {
     const account = getAccount({
       account: {
         audience,
+        label: 'me',
         requestMode: 'label',
       },
     }, strg)
 
     fetchMocks({
-      account, label, id: label,
+      account, label: 'me',
     })
 
     account.store(tokenData)
-      .then(_ => account.tokenData())
+      .then(() => account.tokenData())
       .then((_) => {
-        tap.same(JSON.stringify(_), account.storage.getItem(account.id))
+        tap.same(JSON.stringify(_), account.storage.getItem(account.label))
 
         return test.end()
       })

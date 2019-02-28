@@ -1,16 +1,12 @@
 /** @flow */
 import type { TRefreshReponse, TRevokeResponse, TokenData } from '../src/account.js.flow'
 
-export const signInId = 'me.hello.world'
-
-export const label = 'me'
-
 export const audience = 'hello.world'
 
 export const tokenData: TokenData = {
   access_token: '12345',
   refresh_token: '54321',
-  expires_in: 0
+  expires_in: 0,
 }
 
 export const refreshResponse: TRefreshReponse = {
@@ -24,5 +20,5 @@ export const revokeResponse: TRevokeResponse = {
 }
 
 export const accountResponse = {
-  id: 'me.hello.world',
+  id: 'me',
 }

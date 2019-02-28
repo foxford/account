@@ -20,7 +20,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
   leeway: number;
 
-  requestMode: 'label' | 'id';
+  requestMode: 'label' | 'id' | 'me';
 
   provider: IdP<EndpointConfig>;
 
@@ -43,7 +43,10 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       retries: config.retries || MAX_AJAX_RETRY,
     }
     this.leeway = config.leeway || LEEWAY
-    this.requestMode = config.requestMode || 'id'
+    this.requestMode = config.requestMode || 'me'
+
+    // eslint-disable-next-line no-param-reassign
+    if (this.requestMode === 'me') config.label = 'me'
 
     const { id, label } = this._createId(config.audience, config.label)
 
@@ -54,21 +57,22 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  _createId (audience: string, label: string = 'me', separator: string = '.'): { label: string, id: string } {
+  _createId (audience: string, label: string, separator: string = '.'): { label: string, id: string } {
     if (!audience) throw new TypeError('`audience` is absent')
+    if (!label) throw new TypeError('`label` is absent')
 
     return {
-      label,
-      id: `${label}${separator}${audience}`,
+      id: label,
+      label: `${label}${separator}${audience}`,
     }
   }
 
   _requestLabel (): string {
-    return this.requestMode === 'label' ? this.label : this.id
+    return this.id
   }
 
   load (storageLabel: string = ''): Promise<TokenData> {
-    const label = storageLabel || this.id
+    const label = storageLabel || this.label
     if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
     return Promise.resolve(() => this.storage.getItem(label))
@@ -81,7 +85,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   remove (storageLabel: string = ''): Promise<TokenData> {
-    const label = storageLabel || this.id
+    const label = storageLabel || this.label
     if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
     return this.load(label)
@@ -93,7 +97,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   store (data: TokenData, storageLabel: string = ''): Promise<TokenData> {
-    const label = storageLabel || this.id
+    const label = storageLabel || this.label
     if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
     return Promise.resolve(data)
@@ -115,7 +119,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   account (storageLabel: string = ''): Promise<TokenData> {
-    const label = storageLabel || this.id
+    const label = storageLabel || this.label
 
     const fn = this.provider.account
 
@@ -131,7 +135,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   tokenData (storageLabel: string = ''): Promise<TokenData> {
-    const label = storageLabel || this.id
+    const label = storageLabel || this.label
 
     const fn = this.provider.refreshAccessToken
 
@@ -159,7 +163,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   revokeRefreshToken (storageLabel: string = ''): Promise<TokenData> {
-    const label = storageLabel || this.id
+    const label = storageLabel || this.label
 
     const fn = this.provider.revokeRefreshToken
 
