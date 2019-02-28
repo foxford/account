@@ -29,7 +29,7 @@ export class IdP<Config: EndpointConfig> implements Provider {
 
       return conf.authnEndpoint && typeof conf.authnEndpoint === 'function'
         ? conf.authnEndpoint()
-        : (conf.authnEndpoint || `${this.endpoint}/auth`)
+        : (conf.authnEndpoint || `${this.endpoint}/authn`)
     }
 
     this.endpoint = config.endpoint

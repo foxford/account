@@ -11,13 +11,14 @@ import { Account, IdP as Provider } from 'account'
 ### Initialize
 
 ```javascript
-const config = {
-  provider: new Provider({
-    endpoint: 'http://domain.name'
-  }),
-  // You can write your own provider or use default IdP provider
-}
-const account = new Account(config, window.localStorage)
+const config = {}
+
+const provider = new Provider({
+  endpoint: 'http://domain.name'
+})
+// You can write your own provider or use default IdP provider
+
+const account = new Account(config, provider, window.localStorage)
 // You can bypass any storage provider which implements [Provider](./src/identity-provider.js.flow#14) interface
 ```
 
