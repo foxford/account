@@ -43,7 +43,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       retries: config.retries || MAX_AJAX_RETRY,
     }
     this.leeway = config.leeway || LEEWAY
-    this.requestMode = config.requestMode || 'me'
+    this.requestMode = config.requestMode || 'id'
 
     // eslint-disable-next-line no-param-reassign
     if (this.requestMode === 'me') config.label = 'me'
@@ -68,7 +68,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   _requestLabel (): string {
-    return this.id
+    return this.requestMode === 'label' ? this.label : this.id
   }
 
   load (storageLabel: string = ''): Promise<TokenData> {

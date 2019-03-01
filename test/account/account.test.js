@@ -55,7 +55,8 @@ const getAccount = (opts = {}, store) => {
 
 const fetchMocks = ({
   account,
-  label: id,
+  id,
+  label,
   action: action = 'refresh',
   response = refreshResponse,
 }) => {
@@ -66,7 +67,7 @@ const fetchMocks = ({
     method: 'GET',
   })
 
-  fetchMock.mock(`${account.provider.accountEndpoint}/${id}/${action}`, {
+  fetchMock.mock(`${account.provider.accountEndpoint}/${label}/${action}`, {
     body: response,
   }, {
     methods: 'POST',
@@ -81,6 +82,7 @@ tap.test('Account', (t) => {
     tap.same(account.id, 'me')
     tap.same(account.label, `me.${audience}`)
     tap.same(account.requestMode, 'me')
+    tap.same(account._requestLabel(), 'me')
 
     account = getAccount({
       account: {
@@ -94,6 +96,7 @@ tap.test('Account', (t) => {
     tap.same(account.id, 'you')
     tap.same(account.label, `you.${audience}`)
     tap.same(account.requestMode, 'label')
+    tap.same(account._requestLabel(), `you.${audience}`)
 
     account = getAccount({
       account: {
@@ -107,6 +110,7 @@ tap.test('Account', (t) => {
     tap.same(account.id, '12345')
     tap.same(account.label, `12345.${audience}`)
     tap.same(account.requestMode, 'id')
+    tap.same(account._requestLabel(), '12345')
 
     tap.throws(() => {
       getAccount({
@@ -288,7 +292,7 @@ tap.test('Account', (t) => {
     }, strg)
 
     fetchMocks({
-      account, label: 'me',
+      account, id: 'me', label: `me.${audience}`,
     })
 
     account.store(tokenData)
