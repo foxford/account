@@ -40,12 +40,15 @@ function ClosureStorage (initialState) {
 const getAccount = (opts = {}, store) => {
   debug('Create account instance')
 
-  return new Account({
-    provider: new IdP(opts.provider || { endpoint: 'https://mock-host' }),
-    ...(opts.account || {
-      audience,
-    }),
-  }, store || new ClosureStorage())
+  return new Account(
+    {
+      ...(opts.account || {
+        audience,
+      }),
+    },
+    new IdP(opts.provider || { endpoint: 'https://mock-host' }),
+    store || new ClosureStorage()
+  )
 }
 
 const fetchMocks = ({

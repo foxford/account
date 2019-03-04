@@ -5,6 +5,26 @@
       "plugins":[
         "@babel/plugin-proposal-class-properties"
       ]
+    },
+    "es": {
+      "presets":[
+        "@babel/preset-flow",
+        ["@babel/preset-env", {
+          "modules": false,
+          "targets":{
+            "chrome": 43,
+            "firefox": 43,
+            "safari": 10,
+            "ios": 10,
+            "opera": 40,
+            "edge": 13,
+            "ie": 9
+          }
+        }]
+      ],
+      "plugins":[
+        "@babel/plugin-proposal-class-properties"
+      ]
     }
   }
 }

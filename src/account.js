@@ -30,13 +30,13 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
   storage: Storage;
 
-  constructor (config: Config, storage: Storage) {
-    if (!config || !config.provider) throw new TypeError('Missing `provider` in config')
-
+  constructor (config: Config, provider: IdP<EndpointConfig>, storage: Storage) {
+    if (!config) throw new TypeError('Missing `config`')
+    if (!provider) throw new TypeError('Provider is not defined')
     if (!storage) throw new TypeError('Storage is not defined')
 
     this.storage = storage
-    this.provider = config.provider
+    this.provider = provider
     this.fetchFn = fetchRetry
     this.fetchOpts = {
       delay: config.retryDelay || AJAX_RETRY_DELAY,
@@ -98,7 +98,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
     return Promise.resolve(data)
       .then((_) => {
-        let expires_time: number = 0
+        let expires_time: number = 0; // eslint-disable-line semi
 
         if (_.expires_in) {
           const expin = Number(_.expires_in)
@@ -106,12 +106,11 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
           expires_time = Date.now() + (expin || 0) * 1e3
         }
 
-        return ({ ..._, expires_time })
-      })
-      .then((_) => {
-        this.storage.setItem(label, JSON.stringify(_))
+        const token = { ..._, expires_time }
 
-        return _
+        this.storage.setItem(label, JSON.stringify(token))
+
+        return token
       })
   }
 

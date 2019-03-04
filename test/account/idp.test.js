@@ -17,7 +17,7 @@ tap.test('Idp is configured properly', (t) => {
   tap.throws(() => {
     // eslint-disable-next-line no-unused-vars
     const idp = new IdP({
-      authnEndpoint: 'http://hello.world/auth',
+      authnEndpoint: 'http://hello.world/authn',
     })
   }, { message: 'Can not resolve account endpoint' })
 
@@ -34,7 +34,7 @@ tap.test('Idp is configured properly', (t) => {
 
   tap.same(idp.endpoint, ENDPOINT)
   tap.same(idp.accountEndpoint, `${ENDPOINT}/accounts`)
-  tap.same(idp.authnEndpoint, `${ENDPOINT}/auth`)
+  tap.same(idp.authnEndpoint, `${ENDPOINT}/authn`)
 
   const idp2 = new IdP({
     authnEndpoint: `${ENDPOINT}/authn`,
