@@ -11,6 +11,7 @@ import { name } from '../../package.json'
 import {
   audience,
   tokenData,
+  account_label,
   accountResponse,
   refreshResponse,
 } from '../response.mock'
@@ -20,6 +21,8 @@ global.self = global
 require('whatwg-fetch') // eslint-disable-line node/no-unpublished-require
 
 const debug = Debug(`${name}:account`)
+
+const meModeLabel = 'maybe_account_label'
 
 function ClosureStorage (initialState) {
   this.storage = initialState || {}
@@ -42,6 +45,7 @@ const getAccount = (opts = {}, store) => {
   const options = (opts.account || {
     audience,
     requestMode: 'me',
+    label: meModeLabel,
   })
 
   debug('Initialize account with options:', options)
@@ -55,12 +59,11 @@ const getAccount = (opts = {}, store) => {
 
 const fetchMocks = ({
   account,
-  id,
   label,
   action: action = 'refresh',
   response = refreshResponse,
 }) => {
-  fetchMock.mock(`${account.provider.authnEndpoint}/${id}`, {
+  fetchMock.mock(`${account.provider.authnEndpoint}/${label}`, {
     body: accountResponse,
     status: 200,
   }, {
@@ -79,38 +82,38 @@ tap.test('Account', (t) => {
     let account = getAccount()
 
     tap.not(account, undefined)
-    tap.same(account.id, 'me')
-    tap.same(account.label, `me.${audience}`)
+    tap.same(account.id, `${meModeLabel}.${audience}`)
+    tap.same(account.label, meModeLabel)
     tap.same(account.requestMode, 'me')
     tap.same(account._requestLabel(), 'me')
 
     account = getAccount({
       account: {
-        label: 'you',
+        label: 'account_label',
         requestMode: 'label',
         audience,
       },
     })
 
     tap.not(account, undefined)
-    tap.same(account.id, 'you')
-    tap.same(account.label, `you.${audience}`)
+    tap.same(account.id, `${account_label}.${audience}`)
+    tap.same(account.label, account_label)
     tap.same(account.requestMode, 'label')
-    tap.same(account._requestLabel(), `you.${audience}`)
+    tap.same(account._requestLabel(), account_label)
 
     account = getAccount({
       account: {
-        label: '12345',
+        label: 'account_label',
         requestMode: 'id',
         audience,
       },
     })
 
     tap.not(account, undefined)
-    tap.same(account.id, '12345')
-    tap.same(account.label, `12345.${audience}`)
+    tap.same(account.id, `${account_label}.${audience}`)
+    tap.same(account.label, account_label)
     tap.same(account.requestMode, 'id')
-    tap.same(account._requestLabel(), '12345')
+    tap.same(account._requestLabel(), `${account_label}.${audience}`)
 
     tap.throws(() => {
       getAccount({
@@ -167,7 +170,7 @@ tap.test('Account', (t) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
-    strg.setItem(acc.label, '{"a":123}')
+    strg.setItem(acc.id, '{"a":123}')
 
     acc.load()
       .then((data) => {
@@ -193,12 +196,12 @@ tap.test('Account', (t) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
-    strg.setItem(acc.label, '{"a":123}')
+    strg.setItem(acc.id, '{"a":123}')
 
     acc.remove()
       .then((data) => {
         tap.same(data, { a: 123 })
-        tap.same(strg.getItem(acc.label, undefined))
+        tap.same(strg.getItem(acc.id, undefined))
 
         return test.end()
       })
@@ -209,7 +212,7 @@ tap.test('Account', (t) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
-    strg.setItem(acc.label, '"')
+    strg.setItem(acc.id, '"')
 
     tap.throws(acc.load)
 
@@ -220,7 +223,7 @@ tap.test('Account', (t) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
-    strg.setItem(acc.label, '{"a":"123"}')
+    strg.setItem(acc.id, '{"a":"123"}')
 
     acc.load()
       .then((data) => {
@@ -292,13 +295,13 @@ tap.test('Account', (t) => {
     }, strg)
 
     fetchMocks({
-      account, id: 'me', label: `me.${audience}`,
+      account, label: 'me',
     })
 
     account.store(tokenData)
       .then(() => account.tokenData())
       .then((_) => {
-        tap.same(JSON.stringify(_), account.storage.getItem(account.label))
+        tap.same(JSON.stringify(_), account.storage.getItem(account.id))
 
         return test.end()
       })

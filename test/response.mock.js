@@ -3,6 +3,8 @@ import type { TRefreshReponse, TRevokeResponse, TokenData } from '../src/account
 
 export const audience = 'hello.world'
 
+export const account_label = 'account_label'
+
 export const tokenData: TokenData = {
   access_token: '12345',
   refresh_token: '54321',
@@ -20,5 +22,7 @@ export const revokeResponse: TRevokeResponse = {
 }
 
 export const accountResponse = {
-  id: 'me',
+  access_token: '34567',
+  refresh_token: '54321',
+  token_type: 'Bearer',
 }
