@@ -44,7 +44,7 @@ const getAccount = (opts = {}, store) => {
 
   const options = (opts.account || {
     audience,
-    requestMode: 'me',
+    requestMode: 'label',
     label: meModeLabel,
   })
 
@@ -79,15 +79,30 @@ const fetchMocks = ({
 
 tap.test('Account', (t) => {
   t.test('construct', (test) => {
-    let account = getAccount()
+    const idp = new IdP({ endpoint: 'https://mock-host' })
 
-    tap.not(account, undefined)
-    tap.same(account.id, `${meModeLabel}.${audience}`)
-    tap.same(account.label, meModeLabel)
-    tap.same(account.requestMode, 'me')
-    tap.same(account._requestLabel(), 'me')
+    Account.fetchLabel(tokenData, idp)
+      .then(({ id: acc_label }) => {
+        const acc = new Account(
+          {
+            audience,
+            label: acc_label,
+          },
+          idp,
+          new ClosureStorage()
+        )
 
-    account = getAccount({
+        tap.not(acc, undefined)
+        tap.same(acc.id, `${account_label}.${audience}`)
+        tap.same(acc.label, account_label)
+        tap.same(acc.requestMode, 'id')
+        tap.same(acc._requestLabel(), `${account_label}.${audience}`)
+
+        return undefined
+      })
+      .catch(tap.error)
+
+    let account = getAccount({
       account: {
         label: 'account_label',
         requestMode: 'label',

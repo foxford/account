@@ -1,6 +1,6 @@
 {
   "name": "@netology-group/account",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "account client",
   "keywords": [
     "authentication",
@@ -31,8 +31,8 @@
   },
   "scripts": {
     "build": "npm run build/es && npm run build/umd",
-    "build/umd": "cross-env NODE_ENV=production webpack -p",
     "build/es": "cross-env BABEL_ENV=es babel src --config-file ./.babelrc.json --copy-files -d es",
+    "build/umd": "cross-env NODE_ENV=production webpack -p",
     "precoverage": "rm -rf .nyc_output coverage && mkdir -p coverage .nyc_output",
     "coverage": "tap \"test/**/*.test.js\" --nyc-arg=--require=./test/babel-register.js --cov",
     "postcoverage": "tap --coverage-report=text-lcov > coverage/coverage.lcov && codecov",

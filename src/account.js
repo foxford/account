@@ -2,7 +2,7 @@
 import type { IdP } from './idp'
 import type { EndpointConfig } from './identity-provider.js.flow'
 import type { IAbstractStorage as AbstractStorage } from './storage.js.flow'
-import type { AccountConfig, TokenData, TRefreshReponse, TRevokeResponse } from './account.js.flow'
+import type { AccountConfig, TokenData, ProfileData, TRefreshReponse, TRevokeResponse } from './account.js.flow'
 import { fetchRetry, isExpired, validResponse, parsedResponse, parse } from './utils/index'
 
 const MAX_AJAX_RETRY = 3
@@ -20,7 +20,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
   leeway: number;
 
-  requestMode: 'label' | 'id' | 'me';
+  requestMode: 'label' | 'id';
 
   provider: IdP<EndpointConfig>;
 
@@ -53,6 +53,23 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     if (!this.id) throw new TypeError('Failed to configure account. Id is not present')
   }
 
+  // eslint-disable-next-line max-len
+  static fetchLabel (data: TokenData, provider: IdP<EndpointConfig>, label: void | string): Promise<ProfileData> {
+    const { access_token } = data
+
+    if (!access_token) throw new TypeError('`access_token` is absend')
+    if (!provider) throw new TypeError('Provider is not defined')
+
+    const fetchOpts = {
+      delay: AJAX_RETRY_DELAY,
+      retries: MAX_AJAX_RETRY,
+    }
+
+    return fetchRetry(() => provider.account(label || 'me', access_token), fetchOpts)
+      .then(validResponse)
+      .then(parsedResponse)
+  }
+
   // eslint-disable-next-line class-methods-use-this
   _createId (audience: string, label: string, separator: string = '.'): { label: string, id: string } {
     if (!audience) throw new TypeError('`audience` is absent')
@@ -65,7 +82,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   _requestLabel (): string {
-    return this.requestMode === 'me' ? 'me' : (this.requestMode === 'label' ? this.label : this.id)
+    return this.requestMode === 'label' ? this.label : this.id
   }
 
   load (storageLabel: string = ''): Promise<TokenData> {
@@ -115,7 +132,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       })
   }
 
-  account (storageLabel: string = ''): Promise<TokenData> {
+  account (storageLabel: string = ''): Promise<ProfileData> {
     const label = storageLabel || this.id
 
     const fn = this.provider.account

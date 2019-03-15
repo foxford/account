@@ -1,5 +1,5 @@
 /** @flow */
-import type { TRefreshReponse, TRevokeResponse, TokenData } from '../src/account.js.flow'
+import type { TRefreshReponse, TRevokeResponse, TokenData, ProfileData } from '../src/account.js.flow'
 
 export const audience = 'hello.world'
 
@@ -19,10 +19,8 @@ export const refreshResponse: TRefreshReponse = {
 
 export const revokeResponse: TRevokeResponse = {
   refresh_token: '67890',
-}
+}; // eslint-disable-line semi
 
-export const accountResponse = {
-  access_token: '34567',
-  refresh_token: '54321',
-  token_type: 'Bearer',
+export const accountResponse: ProfileData = {
+  id: account_label,
 }
