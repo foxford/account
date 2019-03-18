@@ -22,7 +22,7 @@ export class IdP<Config: EndpointConfig> implements Provider {
       return conf.accountEndpoint && typeof conf.accountEndpoint === 'function'
         ? conf.accountEndpoint()
         : (conf.accountEndpoint || `${this.endpoint}/accounts`)
-    }
+    }; // eslint-disable-line semi
 
     const _authnEndpoint: Function = (conf: Config) => {
       if (!this.endpoint && !conf.authnEndpoint) throw new TypeError('Can not resolve authentication endpoint')

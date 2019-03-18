@@ -16,7 +16,7 @@ import { Account, IdP as Provider } from 'account'
 
 ```javascript
 const config = {
-  label: 'me'
+  label: '<account_label>'
 }
 
 const provider = new Provider({
@@ -34,7 +34,7 @@ const account = new Account(config, provider, window.localStorage)
 
 These modes are pretty the same. Main difference is that in `id` mode `Account` [uses `audience`](./test/account/account.test.js#L105-L131) suffix at any request.
 
-#### "Me" mode
+#### Clarify label
 
 `id` & `label` modes require a label to be known. But you actually may not.
 
@@ -43,7 +43,7 @@ It uses `me` placeholer for the request's URL. For instance:
 
 ```javascript
 Account.fetchLabel(
-  { access_token: '<token>' },
+  { refresh_token: '<token>' },
   new IdP(/* idp config */),
   /* here you may use your own placeholder. `me` by default */
 ).then(({ id: acc_label }) => {

@@ -55,9 +55,9 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
   // eslint-disable-next-line max-len
   static fetchLabel (data: TokenData, provider: IdP<EndpointConfig>, label: void | string): Promise<ProfileData> {
-    const { access_token } = data
+    const { refresh_token } = data
 
-    if (!access_token) throw new TypeError('`access_token` is absend')
+    if (!refresh_token) throw new TypeError('`refresh_token` is absent')
     if (!provider) throw new TypeError('Provider is not defined')
 
     const fetchOpts = {
@@ -65,9 +65,13 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       retries: MAX_AJAX_RETRY,
     }
 
-    return fetchRetry(() => provider.account(label || 'me', access_token), fetchOpts)
+    return fetchRetry(() => provider.refreshAccessToken(label || 'me', refresh_token), fetchOpts)
       .then(validResponse)
       .then(parsedResponse)
+      // eslint-disable-next-line promise/no-nesting
+      .then((tokenData: TRefreshReponse) => fetchRetry(() => provider.account(label || 'me', tokenData.access_token), fetchOpts)
+        .then(validResponse)
+        .then(parsedResponse))
   }
 
   // eslint-disable-next-line class-methods-use-this
