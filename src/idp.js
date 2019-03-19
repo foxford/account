@@ -17,7 +17,7 @@ export class IdP<Config: EndpointConfig> implements Provider {
     if (!config) throw new TypeError('Missing provider configuration')
 
     const _accountEndpoint: Function = (conf: Config) => {
-      if (!this.endpoint && !conf.accountEndpoint) throw new TypeError('Can not resolve account endpoint')
+      if (!this.endpoint && !conf.accountEndpoint) throw new TypeError('Could not resolve account endpoint')
 
       return conf.accountEndpoint && typeof conf.accountEndpoint === 'function'
         ? conf.accountEndpoint()
@@ -25,7 +25,7 @@ export class IdP<Config: EndpointConfig> implements Provider {
     }; // eslint-disable-line semi
 
     const _authnEndpoint: Function = (conf: Config) => {
-      if (!this.endpoint && !conf.authnEndpoint) throw new TypeError('Can not resolve authentication endpoint')
+      if (!this.endpoint && !conf.authnEndpoint) throw new TypeError('Could not resolve authentication endpoint')
 
       return conf.authnEndpoint && typeof conf.authnEndpoint === 'function'
         ? conf.authnEndpoint()

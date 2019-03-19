@@ -3,7 +3,7 @@ import type { IdP } from './idp'
 import type { EndpointConfig } from './identity-provider.js.flow'
 import type { IAbstractStorage as AbstractStorage } from './storage.js.flow'
 import type { AccountConfig, TokenData, ProfileData, TRefreshReponse, TRevokeResponse } from './account.js.flow'
-import { fetchRetry, isExpired, validResponse, parsedResponse, parse } from './utils/index'
+import { fetchRetry, isExpired, getExpiresTime, validResponse, parsedResponse, parse } from './utils/index'
 
 const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
@@ -96,7 +96,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     return Promise.resolve(() => this.storage.getItem(label))
       .then((fn) => {
         const value = fn()
-        if (!value) throw new TypeError('Can not load data')
+        if (!value) throw new TypeError('Could not load data')
 
         return parse(value)
       })
@@ -118,21 +118,20 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
     const label = storageLabel || this.id
     if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
-    return Promise.resolve(data)
-      .then((_) => {
-        let expires_time: number = 0; // eslint-disable-line semi
+    const _ = data
+    let expires_time: number = 0; // eslint-disable-line semi
 
-        if (_.expires_in) {
-          const expin = Number(_.expires_in)
-          if (isNaN(expin)) throw new TypeError('Wrong `expires_in` value')
-          expires_time = Date.now() + (expin || 0) * 1e3
-        }
+    if (!_.expires_time) expires_time = getExpiresTime(_.expires_in, Date.now())
+    // eslint-disable-next-line prefer-destructuring
+    else expires_time = _.expires_time
 
-        const token = { ..._, expires_time }
+    const token = { ..._, expires_time }
 
-        this.storage.setItem(label, JSON.stringify(token))
+    return Promise.resolve(token)
+      .then((tokenData) => {
+        this.storage.setItem(label, JSON.stringify(tokenData))
 
-        return token
+        return tokenData
       })
   }
 
@@ -159,7 +158,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
 
     return this.load(label)
       .then((maybeValidTokens: TokenData) => {
-        const expired = isExpired(maybeValidTokens, this.leeway)
+        const expired = isExpired(maybeValidTokens, Date.now(), this.leeway)
 
         if (!expired) return maybeValidTokens
 
@@ -176,6 +175,7 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
               ...old,
               access_token: _.access_token,
               expires_in: _.expires_in,
+              expires_time: getExpiresTime(_.expires_in, Date.now()),
             })))
       })
   }

@@ -176,7 +176,7 @@ tap.test('Account', (t) => {
 
     acc.load()
       .catch((error) => {
-        tap.same(error.message, 'Can not load data')
+        tap.same(error.message, 'Could not load data')
         test.end()
       })
   })
@@ -202,7 +202,7 @@ tap.test('Account', (t) => {
 
     acc.remove()
       .catch((error) => {
-        tap.same(error.message, 'Can not load data')
+        tap.same(error.message, 'Could not load data')
         test.end()
       })
   })
@@ -253,13 +253,48 @@ tap.test('Account', (t) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
+    tap.throws(() => {
+      acc.store({
+        access_token: 'somestring',
+      })
+    }, { message: '`expires_in` is absent' })
+
+    const _now = global.Date.now
+
+    global.Date.now = () => 1552992614509
+
     acc.store({
       access_token: 'somestring',
+      expires_in: 300,
     })
       .then((data) => {
         tap.same(data, {
           access_token: 'somestring',
-          expires_time: 0,
+          expires_time: 1552992914509,
+          expires_in: 300,
+        })
+
+        return undefined
+      })
+      .finally(() => {
+        global.Date.now = _now
+        test.end()
+      })
+      .catch(tap.error)
+  })
+
+  t.test('store a token with expiration_time', (test) => {
+    const strg = new ClosureStorage()
+    const acc = getAccount({}, strg)
+
+    acc.store({
+      access_token: 'somestring',
+      expires_time: 1552992914509,
+    })
+      .then((data) => {
+        tap.same(data, {
+          access_token: 'somestring',
+          expires_time: 1552992914509,
         })
 
         return test.end()
@@ -313,7 +348,16 @@ tap.test('Account', (t) => {
       account, label: 'me',
     })
 
-    account.store(tokenData)
+    tap.throws(() => {
+      account.store({
+        ...tokenData,
+      })
+    }, { message: 'Wrong `expires_in` value' })
+
+    account.store({
+      ...tokenData,
+      expires_in: 300,
+    })
       .then(() => account.tokenData())
       .then((_) => {
         tap.same(JSON.stringify(_), account.storage.getItem(account.id))
