@@ -12,21 +12,21 @@ tap.test('Idp is configured properly', (t) => {
 
   tap.throws(() => {
     const idp = new IdP({}) // eslint-disable-line no-unused-vars
-  }, { message: /Can not resolve (authentication|account) endpoint/ })
+  }, { message: /Could not resolve (authentication|account) endpoint/ })
 
   tap.throws(() => {
     // eslint-disable-next-line no-unused-vars
     const idp = new IdP({
       authnEndpoint: 'http://hello.world/authn',
     })
-  }, { message: 'Can not resolve account endpoint' })
+  }, { message: 'Could not resolve account endpoint' })
 
   tap.throws(() => {
     // eslint-disable-next-line no-unused-vars
     const idp = new IdP({
       accountEndpoint: 'http://hello.world/account',
     })
-  }, { message: 'Can not resolve authentication endpoint' })
+  }, { message: 'Could not resolve authentication endpoint' })
 
   const idp = new IdP({
     endpoint: ENDPOINT,

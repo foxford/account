@@ -9,9 +9,9 @@ import { IdP } from '../../src/idp'
 import { name } from '../../package.json'
 
 import {
-  label,
   audience,
   tokenData,
+  account_label,
   accountResponse,
   refreshResponse,
 } from '../response.mock'
@@ -21,6 +21,8 @@ global.self = global
 require('whatwg-fetch') // eslint-disable-line node/no-unpublished-require
 
 const debug = Debug(`${name}:account`)
+
+const meModeLabel = 'maybe_account_label'
 
 function ClosureStorage (initialState) {
   this.storage = initialState || {}
@@ -40,12 +42,16 @@ function ClosureStorage (initialState) {
 const getAccount = (opts = {}, store) => {
   debug('Create account instance')
 
+  const options = (opts.account || {
+    audience,
+    requestMode: 'label',
+    label: meModeLabel,
+  })
+
+  debug('Initialize account with options:', options)
+
   return new Account(
-    {
-      ...(opts.account || {
-        audience,
-      }),
-    },
+    options,
     new IdP(opts.provider || { endpoint: 'https://mock-host' }),
     store || new ClosureStorage()
   )
@@ -53,19 +59,18 @@ const getAccount = (opts = {}, store) => {
 
 const fetchMocks = ({
   account,
-  label: id,
-  id: someid,
+  label,
   action: action = 'refresh',
   response = refreshResponse,
 }) => {
-  fetchMock.mock(`${account.provider.authnEndpoint}/${id}`, {
+  fetchMock.mock(`${account.provider.authnEndpoint}/${label}`, {
     body: accountResponse,
     status: 200,
   }, {
     method: 'GET',
   })
 
-  fetchMock.mock(`${account.provider.accountEndpoint}/${someid}/${action}`, {
+  fetchMock.mock(`${account.provider.accountEndpoint}/${label}/${action}`, {
     body: response,
   }, {
     methods: 'POST',
@@ -74,30 +79,89 @@ const fetchMocks = ({
 
 tap.test('Account', (t) => {
   t.test('construct', (test) => {
-    let account = getAccount()
+    const idp = new IdP({ endpoint: 'https://mock-host' })
 
-    tap.not(account, undefined)
-    tap.same(account.id, `me.${audience}`)
-    tap.same(account.label, 'me')
+    Account.fetchLabel(tokenData, idp)
+      .then(({ id: acc_label }) => {
+        const acc = new Account(
+          {
+            audience,
+            label: acc_label,
+          },
+          idp,
+          new ClosureStorage()
+        )
 
-    account = getAccount({
+        tap.not(acc, undefined)
+        tap.same(acc.id, `${account_label}.${audience}`)
+        tap.same(acc.label, account_label)
+        tap.same(acc.requestMode, 'id')
+        tap.same(acc._requestLabel(), `${account_label}.${audience}`)
+
+        return undefined
+      })
+      .catch(tap.error)
+
+    let account = getAccount({
       account: {
-        label: 'you',
+        label: 'account_label',
+        requestMode: 'label',
         audience,
       },
     })
 
     tap.not(account, undefined)
-    tap.same(account.id, `you.${audience}`)
-    tap.same(account.label, 'you')
+    tap.same(account.id, `${account_label}.${audience}`)
+    tap.same(account.label, account_label)
+    tap.same(account.requestMode, 'label')
+    tap.same(account._requestLabel(), account_label)
+
+    account = getAccount({
+      account: {
+        label: 'account_label',
+        requestMode: 'id',
+        audience,
+      },
+    })
+
+    tap.not(account, undefined)
+    tap.same(account.id, `${account_label}.${audience}`)
+    tap.same(account.label, account_label)
+    tap.same(account.requestMode, 'id')
+    tap.same(account._requestLabel(), `${account_label}.${audience}`)
+
+    tap.throws(() => {
+      getAccount({
+        account: {},
+      })
+    }, { message: '`audience` is absent' })
 
     tap.throws(() => {
       getAccount({
         account: {
           label: 'you',
+          requestMode: 'label',
         },
       })
     }, { message: '`audience` is absent' })
+
+    tap.throws(() => {
+      getAccount({
+        account: {
+          requestMode: 'label',
+          audience,
+        },
+      })
+    }, { message: '`label` is absent' })
+
+    tap.throws(() => {
+      getAccount({
+        account: {
+          requestMode: 'id',
+          audience,
+        },
+      })
+    }, { message: '`label` is absent' })
 
     test.end()
   })
@@ -112,7 +176,7 @@ tap.test('Account', (t) => {
 
     acc.load()
       .catch((error) => {
-        tap.same(error.message, 'Can not load data')
+        tap.same(error.message, 'Could not load data')
         test.end()
       })
   })
@@ -124,8 +188,8 @@ tap.test('Account', (t) => {
     strg.setItem(acc.id, '{"a":123}')
 
     acc.load()
-      .then((tokenData) => {
-        tap.same(tokenData, { a: 123 })
+      .then((data) => {
+        tap.same(data, { a: 123 })
 
         return test.end()
       })
@@ -138,7 +202,7 @@ tap.test('Account', (t) => {
 
     acc.remove()
       .catch((error) => {
-        tap.same(error.message, 'Can not load data')
+        tap.same(error.message, 'Could not load data')
         test.end()
       })
   })
@@ -150,8 +214,8 @@ tap.test('Account', (t) => {
     strg.setItem(acc.id, '{"a":123}')
 
     acc.remove()
-      .then((tokenData) => {
-        tap.same(tokenData, { a: 123 })
+      .then((data) => {
+        tap.same(data, { a: 123 })
         tap.same(strg.getItem(acc.id, undefined))
 
         return test.end()
@@ -189,13 +253,48 @@ tap.test('Account', (t) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
+    tap.throws(() => {
+      acc.store({
+        access_token: 'somestring',
+      })
+    }, { message: '`expires_in` is absent' })
+
+    const _now = global.Date.now
+
+    global.Date.now = () => 1552992614509
+
     acc.store({
       access_token: 'somestring',
+      expires_in: 300,
     })
       .then((data) => {
         tap.same(data, {
           access_token: 'somestring',
-          expires_time: 0,
+          expires_time: 1552992914509,
+          expires_in: 300,
+        })
+
+        return undefined
+      })
+      .finally(() => {
+        global.Date.now = _now
+        test.end()
+      })
+      .catch(tap.error)
+  })
+
+  t.test('store a token with expiration_time', (test) => {
+    const strg = new ClosureStorage()
+    const acc = getAccount({}, strg)
+
+    acc.store({
+      access_token: 'somestring',
+      expires_time: 1552992914509,
+    })
+      .then((data) => {
+        tap.same(data, {
+          access_token: 'somestring',
+          expires_time: 1552992914509,
         })
 
         return test.end()
@@ -240,16 +339,26 @@ tap.test('Account', (t) => {
     const account = getAccount({
       account: {
         audience,
+        label: 'me',
         requestMode: 'label',
       },
     }, strg)
 
     fetchMocks({
-      account, label, id: label,
+      account, label: 'me',
     })
 
-    account.store(tokenData)
-      .then(_ => account.tokenData())
+    tap.throws(() => {
+      account.store({
+        ...tokenData,
+      })
+    }, { message: 'Wrong `expires_in` value' })
+
+    account.store({
+      ...tokenData,
+      expires_in: 300,
+    })
+      .then(() => account.tokenData())
       .then((_) => {
         tap.same(JSON.stringify(_), account.storage.getItem(account.id))
 

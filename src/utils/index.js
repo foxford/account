@@ -29,12 +29,24 @@ export const fetchRetry = (requestFn: Function, opts: Object): Promise<Response>
 /**
  * Check token expire
  */
-export const isExpired = (data: TokenData, leeway: number = 3e3): boolean => {
+export const isExpired = (data: TokenData, now: number, leeway: number = 3e3): boolean => {
+  if (!now || isNaN(now)) throw new TypeError('`now` is absent')
+
   const _isExpired = x => !x
     || !x.expires_time
-    || Date.now() > (Number(x.expires_time) - leeway)
+    || now > (Number(x.expires_time) - leeway)
 
   return _isExpired(data)
+}
+
+export const getExpiresTime = (expires_in: string | number, now: number): number => {
+  if (typeof expires_in === 'undefined') throw new TypeError('`expires_in` is absent')
+  if (!now || isNaN(now)) throw new TypeError('`now` is absent')
+
+  const expin = Number(expires_in)
+  if (isNaN(expin) || expin <= 0) throw new TypeError('Wrong `expires_in` value')
+
+  return now + (expin || 0) * 1e3
 }
 
 export const validResponse = (response: Response): Response => {
@@ -57,7 +69,7 @@ export const parsedResponse = (response: Response): Promise<Object> => {
 
 export const parse = (fn: Function | string): Promise<*> => {
   const it = typeof fn === 'function' ? fn() : fn
-  if (typeof it !== 'string') throw new TypeError('Can not parse')
+  if (typeof it !== 'string') throw new TypeError('Could not parse')
 
   return new Promise((resolve, reject) => {
     try {
