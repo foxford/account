@@ -7,8 +7,7 @@ type Token = string
 export type TokenData = {
   access_token: Token,
   refresh_token: Token,
-  expires_in: number,
-  expires_time?: number,
+  expires_time: number,
 }
 
 export type ProfileData = {|

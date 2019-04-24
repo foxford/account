@@ -1,6 +1,6 @@
 {
   "name": "@netology-group/account",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "description": "account client",
   "keywords": [
     "authentication",

@@ -39,14 +39,13 @@ export const isExpired = (data: TokenData, now: number, leeway: number = 3e3): b
   return _isExpired(data)
 }
 
-export const getExpiresTime = (expires_in: string | number, now: number): number => {
-  if (typeof expires_in === 'undefined') throw new TypeError('`expires_in` is absent')
-  if (!now || isNaN(now)) throw new TypeError('`now` is absent')
+export const getExpiresTime = (expires_in: number, expires_time: number): number => {
+  if (typeof expires_in === 'undefined' || isNaN(expires_in)) throw new TypeError('`expires_in` is absent')
+  if (typeof expires_time === 'undefined' || isNaN(expires_time)) throw new TypeError('`expires_time` is absent')
 
-  const expin = Number(expires_in)
-  if (isNaN(expin) || expin <= 0) throw new TypeError('Wrong `expires_in` value')
+  if (expires_in < 0) throw new TypeError('Wrong `expires_in` value')
 
-  return now + (expin || 0) * 1e3
+  return expires_time + expires_in * 1e3
 }
 
 export const validResponse = (response: Response): Response => {

@@ -8,7 +8,7 @@ export const account_label = 'account_label'
 export const tokenData: TokenData = {
   access_token: '12345',
   refresh_token: '54321',
-  expires_in: 0,
+  expires_time: 0,
 }
 
 export const refreshResponse: TRefreshReponse = {
