@@ -33,8 +33,8 @@ tap.test('Idp is configured properly', (t) => {
   })
 
   tap.same(idp.endpoint, ENDPOINT)
-  tap.same(idp.accountEndpoint, `${ENDPOINT}/accounts`)
   tap.same(idp.authnEndpoint, `${ENDPOINT}/authn`)
+  tap.same(idp.accountEndpoint, `${ENDPOINT}/accounts`)
 
   const idp2 = new IdP({
     authnEndpoint: `${ENDPOINT}/authn`,
@@ -42,16 +42,34 @@ tap.test('Idp is configured properly', (t) => {
   })
 
   tap.same(idp2.endpoint, undefined)
-  tap.same(idp2.accountEndpoint, `${ENDPOINT}/accts`)
   tap.same(idp2.authnEndpoint, `${ENDPOINT}/authn`)
+  tap.same(idp2.accountEndpoint, `${ENDPOINT}/accts`)
 
   const idp3 = new IdP({
     authnEndpoint: () => `${ENDPOINT}/authn`,
     accountEndpoint: () => `${ENDPOINT}/accts`,
   })
 
-  tap.same(idp3.accountEndpoint, `${ENDPOINT}/accts`)
   tap.same(idp3.authnEndpoint, `${ENDPOINT}/authn`)
+  tap.same(idp3.accountEndpoint, `${ENDPOINT}/accts`)
+
+  const idp4 = new IdP({
+    endpoint: 'http://hello.anotherworld',
+    authnEndpoint: `${ENDPOINT}/authentication`,
+    accountEndpoint: `${ENDPOINT}/accts`,
+  })
+
+  tap.same(idp4.authnEndpoint, `${ENDPOINT}/authentication`)
+  tap.same(idp4.accountEndpoint, `${ENDPOINT}/accts`)
+
+  const idp5 = new IdP({
+    endpoint: 'http://hello.anotherworld',
+    authnEndpoint: () => `${ENDPOINT}/authentication`,
+    accountEndpoint: () => `${ENDPOINT}/accts`,
+  })
+
+  tap.same(idp5.authnEndpoint, `${ENDPOINT}/authentication`)
+  tap.same(idp5.accountEndpoint, `${ENDPOINT}/accts`)
 
   t.end()
 })

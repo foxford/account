@@ -24,14 +24,16 @@ tap.test('`getExpiresTime` utility', (t) => {
   const now = 1552990279393
 
   tap.throws(() => { getExpiresTime() }, { message: '`expires_in` is absent' })
-  tap.throws(() => { getExpiresTime('') }, { message: '`now` is absent' })
-  tap.throws(() => { getExpiresTime('', 'test') }, { message: '`now` is absent' })
-  tap.throws(() => { getExpiresTime('', now) }, { message: 'Wrong `expires_in` value' })
-  tap.throws(() => { getExpiresTime('test', now) }, { message: 'Wrong `expires_in` value' })
-  tap.throws(() => { getExpiresTime('-1', now) }, { message: 'Wrong `expires_in` value' })
-  tap.throws(() => { getExpiresTime('0', now) }, { message: 'Wrong `expires_in` value' })
+  tap.throws(() => { getExpiresTime('test') }, { message: '`expires_in` is absent' })
 
-  tap.same(getExpiresTime(300, now), 1552990579393)
+  tap.throws(() => { getExpiresTime(0) }, { message: '`expires_time` is absent' })
+  tap.throws(() => { getExpiresTime(0, 'test') }, { message: '`expires_time` is absent' })
+
+  tap.throws(() => { getExpiresTime(-1, 0) }, { message: 'Wrong `expires_in` value' })
+
+  tap.same(getExpiresTime(0, 0), 0)
+  tap.same(getExpiresTime(1, 0), 1e3)
+  tap.same(getExpiresTime(301, now), now + 301 * 1e3)
 
   t.end()
 })

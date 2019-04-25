@@ -249,29 +249,117 @@ tap.test('Account', (t) => {
       .catch(tap.error)
   })
 
-  t.test('store a token', (test) => {
+  t.test('store a token with incomplete data', (test) => {
     const strg = new ClosureStorage()
     const acc = getAccount({}, strg)
 
     tap.throws(() => {
+      acc.store()
+    }, { message: '`token` is absent' })
+
+    tap.throws(() => {
+      acc.store({})
+    }, { message: '`access_token` is absent' })
+
+    tap.throws(() => {
       acc.store({
-        access_token: 'somestring',
+        refresh_token: undefined,
       })
-    }, { message: '`expires_in` is absent' })
+    }, { message: '`access_token` is absent' })
 
-    const _now = global.Date.now
-
-    global.Date.now = () => 1552992614509
+    tap.throws(() => {
+      acc.store({
+        access_token: tokenData.access_token,
+        refresh_token: undefined,
+      })
+    }, { message: '`refresh_token` is absent' })
 
     acc.store({
-      access_token: 'somestring',
-      expires_in: 300,
+      access_token: tokenData.access_token,
     })
       .then((data) => {
         tap.same(data, {
-          access_token: 'somestring',
+          access_token: tokenData.access_token,
+          refresh_token: undefined,
+          expires_time: 0,
+        })
+
+        return undefined
+      })
+      .catch(tap.error)
+
+    acc.store({
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+    })
+      .then((data) => {
+        tap.same(data, {
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_time: 0,
+        })
+
+        return undefined
+      })
+      .catch(tap.error)
+
+    test.end()
+  })
+
+  t.test('store a token with expiration_time', (test) => {
+    const strg = new ClosureStorage()
+    const acc = getAccount({}, strg)
+
+    acc.store({
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expires_time: 1552992914509,
+    })
+      .then((data) => {
+        tap.same(data, {
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
           expires_time: 1552992914509,
-          expires_in: 300,
+        })
+
+        return test.end()
+      })
+      .catch(tap.error)
+  })
+
+  t.end()
+})
+
+tap.test('Account', (t) => {
+  const strg = new ClosureStorage()
+  const account = getAccount({
+    account: {
+      audience,
+      label: 'me',
+      requestMode: 'label',
+    },
+  }, strg)
+
+  fetchMocks({
+    account, label: 'me',
+  })
+
+  t.test('`store` is ok', (test) => {
+    const _now = global.Date.now
+    const sometime = _now()
+
+    global.Date.now = () => sometime
+
+    account.store({
+      ...tokenData,
+      expires_time: sometime,
+    })
+      .then((_) => {
+        tap.same(JSON.stringify(_), account.storage.getItem(account.id))
+        tap.same(_, {
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_time: sometime,
         })
 
         return undefined
@@ -283,86 +371,30 @@ tap.test('Account', (t) => {
       .catch(tap.error)
   })
 
-  t.test('store a token with expiration_time', (test) => {
-    const strg = new ClosureStorage()
-    const acc = getAccount({}, strg)
-
-    acc.store({
-      access_token: 'somestring',
-      expires_time: 1552992914509,
-    })
-      .then((data) => {
-        tap.same(data, {
-          access_token: 'somestring',
-          expires_time: 1552992914509,
-        })
-
-        return test.end()
-      })
-      .catch(tap.error)
-  })
-
-  t.test('store a token that should be expired', (test) => {
-    const strg = new ClosureStorage()
-    const acc = getAccount({}, strg)
-    const _now = global.Date.now
-    const sometime = JSON.stringify(_now())
-
-    global.Date.now = () => Number(sometime)
-
-    acc.store({
-      expires_in: 2,
-      refresh_token: 'somestring',
-    })
-      .then((data) => {
-        tap.same(data, {
-          refresh_token: 'somestring',
-          expires_in: 2,
-          expires_time: Date.now() + 2e3,
-        })
-
-        return data
-      })
-      .finally(() => {
-        global.Date.now = _now
-        test.end()
-      })
-      .catch(tap.error)
-  })
-
-  t.end()
-})
-
-tap.test('Account', (t) => {
   t.test('`tokenData` successful response', (test) => {
-    const strg = new ClosureStorage()
-    const account = getAccount({
-      account: {
-        audience,
-        label: 'me',
-        requestMode: 'label',
-      },
-    }, strg)
+    const _now = global.Date.now
+    const sometime = _now()
 
-    fetchMocks({
-      account, label: 'me',
-    })
-
-    tap.throws(() => {
-      account.store({
-        ...tokenData,
-      })
-    }, { message: 'Wrong `expires_in` value' })
+    global.Date.now = () => sometime
 
     account.store({
       ...tokenData,
-      expires_in: 300,
+      expires_time: 0,
     })
       .then(() => account.tokenData())
       .then((_) => {
         tap.same(JSON.stringify(_), account.storage.getItem(account.id))
+        tap.same(_, {
+          access_token: refreshResponse.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_time: sometime + refreshResponse.expires_in * 1e3,
+        })
 
-        return test.end()
+        return undefined
+      })
+      .finally(() => {
+        global.Date.now = _now
+        test.end()
       })
       .catch(tap.error)
   })

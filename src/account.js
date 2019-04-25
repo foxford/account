@@ -115,17 +115,29 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
   }
 
   store (data: TokenData, storageLabel: string = ''): Promise<TokenData> {
+    if (!data) throw new TypeError('`token` is absent')
+
+    const accessExists = Object.prototype.hasOwnProperty.call(data, 'access_token')
+    const refreshExists = Object.prototype.hasOwnProperty.call(data, 'refresh_token')
+
+    if (!accessExists) throw new TypeError('`access_token` is absent')
+
+    if (refreshExists && !data.refresh_token) throw new TypeError('`refresh_token` is absent')
+
+    if (!refreshExists && !data.access_token) throw new TypeError('`access_token` is absent')
+
+    return this._store(data, storageLabel)
+  }
+
+  _store (data: TokenData, storageLabel: string = ''): Promise<TokenData> {
     const label = storageLabel || this.id
     if (!label) return Promise.reject(new TypeError('`label` is absent'))
 
-    const _ = data
-    let expires_time: number = 0; // eslint-disable-line semi
-
-    if (!_.expires_time) expires_time = getExpiresTime(_.expires_in, Date.now())
-    // eslint-disable-next-line prefer-destructuring
-    else expires_time = _.expires_time
-
-    const token = { ..._, expires_time }
+    const token = {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      expires_time: data.expires_time || 0,
+    }
 
     return Promise.resolve(token)
       .then((tokenData) => {
@@ -172,9 +184,8 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
           // eslint-disable-next-line promise/no-nesting
           .then((_: TRefreshReponse) => this.load(label)
             .then(old => this.store({
-              ...old,
               access_token: _.access_token,
-              expires_in: _.expires_in,
+              refresh_token: old.refresh_token,
               expires_time: getExpiresTime(_.expires_in, Date.now()),
             })))
       })
@@ -197,8 +208,9 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
       // eslint-disable-next-line promise/no-nesting
       .then((_: TRevokeResponse) => this.load(label)
         .then(old => this.store({
-          ...old,
+          access_token: old.access_token,
           refresh_token: _.refresh_token,
+          expires_time: old.expires_time,
         })))
   }
 }
