@@ -1,6 +1,12 @@
 /** @flow */
 import type { TokenData } from '../account.js.flow'
 
+import { Debug as debug } from './debug'
+
+export const Debug = function Debug (ns: string) {
+  return debug(ns, process.env.NODE_ENV === 'production')
+}
+
 export const fetchRetry = (requestFn: Function, opts: Object): Promise<Response> => {
   if (!requestFn) throw new TypeError(`Missing 'requestFn': ${requestFn}`)
 
