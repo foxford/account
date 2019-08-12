@@ -57,6 +57,8 @@
     "babel-eslint": "^10.0.1",
     "babel-loader": "^8.0.5",
     "babel-plugin-annotate-pure-calls": "^0.4.0",
+    "browserlist": "^1.0.1",
+    "caniuse-lite": "^1.0.30000989",
     "eslint": "^5.6.1",
     "eslint-config-adequate": "^1.1.4",
     "eslint-plugin-flowtype": "^3.2.1",
