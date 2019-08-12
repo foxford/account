@@ -1,6 +1,6 @@
 import tap from 'tap'
 
-import { isExpired, getExpiresTime, validResponse, parsedResponse, parse } from '../../src/utils/index'
+import { isExpired, getExpiresTime, validResponse, parsedResponse, parse, Debug } from '../../src/utils/index'
 
 global.self = global
 // bind global to self for the fetch polyfill
@@ -100,6 +100,16 @@ tap.test('`parse` utility', (t) => {
       return res
     })
     .catch(tap.error)
+
+  t.end()
+})
+
+tap.test('`Debug` utility', (t) => {
+  tap.equal(typeof Debug('namespace')() === 'undefined', true)
+
+  tap.throws(() => {
+    Debug()()
+  }, { message: 'Namespace should be a string' })
 
   t.end()
 })
