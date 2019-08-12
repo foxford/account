@@ -1,6 +1,6 @@
 {
   "name": "@netology-group/account",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "account client",
   "keywords": [
     "authentication",
@@ -32,7 +32,7 @@
   "scripts": {
     "build": "npm run build/es && npm run build/umd",
     "build/es": "cross-env BABEL_ENV=es babel src --config-file ./.babelrc.json --copy-files -d es",
-    "build/umd": "cross-env NODE_ENV=production webpack -p",
+    "build/umd": "cross-env BABEL_ENV=umd NODE_ENV=production webpack -p",
     "precoverage": "rm -rf .nyc_output coverage && mkdir -p coverage .nyc_output",
     "coverage": "tap \"test/**/*.test.js\" --nyc-arg=--require=./test/babel-register.js --cov",
     "postcoverage": "tap --coverage-report=text-lcov > coverage/coverage.lcov && codecov",
@@ -50,11 +50,15 @@
   "devDependencies": {
     "@babel/cli": "^7.2.3",
     "@babel/plugin-proposal-class-properties": "^7.3.0",
+    "@babel/plugin-transform-block-scoping": "^7.5.5",
     "@babel/preset-env": "^7.3.1",
     "@babel/preset-flow": "^7.0.0",
     "@babel/register": "^7.0.0",
     "babel-eslint": "^10.0.1",
     "babel-loader": "^8.0.5",
+    "babel-plugin-annotate-pure-calls": "^0.4.0",
+    "browserlist": "^1.0.1",
+    "caniuse-lite": "^1.0.30000989",
     "eslint": "^5.6.1",
     "eslint-config-adequate": "^1.1.4",
     "eslint-plugin-flowtype": "^3.2.1",

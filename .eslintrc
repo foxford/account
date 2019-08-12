@@ -10,7 +10,9 @@
     "__VERSION__": true
   },
   "env": {
-    "mocha": true
+    "mocha": true,
+    "node": true,
+    "browser": true
   },
   "rules": {
     "node/no-unsupported-features/es-syntax": 0

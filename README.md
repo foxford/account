@@ -91,3 +91,23 @@ account
   .remove()
   .then((_ /*: TokenData */) => { /* do something */ })
 ```
+
+## Utilities
+
+### TokenProvider
+
+`TokenProvider` is used to provide an interface to access the valid token on each request. Valid `refresh_token` is needed to initialize `TokenProvider` properly.
+
+```javascript
+const { Account, TokenProvider } = Account
+const account = new Account(/* proper configuration */)
+
+let provider = new TokenProvider({ refresh_token: '<refresh_token>' }, account)
+// or
+provider = new TokenProvider({ refresh_token: '<refresh_token>' })
+provider
+  .iEngine(account)
+  .initialize()
+
+provider.token().then(access_token => {/* do smth */})
+```

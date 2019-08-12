@@ -9,7 +9,7 @@ const MAX_AJAX_RETRY = 3
 const AJAX_RETRY_DELAY = 1000
 const LEEWAY = 3000
 
-export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
+export class Account<Config: AccountConfig, Storage: AbstractStorage> {
   fetchFn: Function;
 
   fetchOpts: Object;
@@ -214,5 +214,3 @@ export default class Account<Config: AccountConfig, Storage: AbstractStorage> {
         })))
   }
 }
-
-export { Account }

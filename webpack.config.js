@@ -16,10 +16,10 @@ module.exports = {
     rules: [
       {
         test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
+        exclude: /node_modules\/(?!debug)/,
         use: {
           loader: 'babel-loader',
-          options: babelrc.env.cjs,
+          options: babelrc.env.umd,
         },
       },
     ],
@@ -29,4 +29,5 @@ module.exports = {
       __VERSION__: JSON.stringify(version),
     }),
   ],
+  target: 'web',
 }

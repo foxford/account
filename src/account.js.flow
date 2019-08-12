@@ -2,7 +2,7 @@
 import type { IdP } from './idp'
 import type { EndpointConfig } from './identity-provider.js.flow'
 
-type Token = string
+export type Token = string
 
 export type TokenData = {
   access_token: Token,
