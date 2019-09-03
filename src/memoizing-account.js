@@ -14,11 +14,15 @@ export class MemoizingAccount extends Account {
     let nextPromise
 
     if (!maybePending) {
-      nextPromise = fn().then((data) => {
-        store.delete(label)
+      nextPromise = fn()
+        .then((data) => {
+          store.delete(label)
 
-        return data
-      })
+          return data
+        })
+        .catch(() => {
+          store.delete(label)
+        })
       store.set(label, nextPromise)
 
       return nextPromise
