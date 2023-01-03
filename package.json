@@ -70,7 +70,7 @@
     "pino": "^4.10.3",
     "rimraf": "^2.6.2",
     "tap": "^12.4.0",
-    "webpack": "^3.11.0",
+    "webpack": "^5.75.0",
     "whatwg-fetch": "^3.0.0"
   },
   "optionalDependencies": {
